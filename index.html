@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StageTEN - Live Shopping Discovery</title>
+    <style>
+        :root {
+            --primary: #6B46C1;
+            --primary-dark: #553C9A;
+            --primary-light: #805AD5;
+            --accent: #ED64A6;
+            --accent-dark: #D53F8C;
+            --success: #38A169;
+            --warning: #F6AD55;
+            --danger: #EF4444;
+            --background: #F7FAFC;
+            --surface: #FFFFFF;
+            --text: #1A202C;
+            --text-muted: #718096;
+            --border: #E2E8F0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            --gradient-hover: linear-gradient(135deg, var(--primary-dark) 0%, var(--accent-dark) 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+		
+		.creator-avatar-large {
+			width: 80px;
+			height: 80px;
+			border-radius: 50%;
+			margin: 0 auto;
+			background: var(--gradient-primary);
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 24px;
+			font-weight: 700;
+			/* Add these properties for background image */
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+		}
+
+        .header {
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 48px 12px 20px;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            background: var(--background);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+            background: var(--surface);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--gradient-primary);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .search-button:hover {
+            background: var(--gradient-hover);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .region-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--background);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .region-badge:hover {
+            background: var(--border);
+        }
+
+        .go-live-btn {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .go-live-btn:hover {
+            background: var(--gradient-hover);
+            transform: translateY(-1px);
+        }
+
+        .main-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .niche-nav {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .niche-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .niche-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 50px;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .niche-btn.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .niche-btn:hover:not(.active) {
+            background: var(--background);
+            color: var(--text);
+        }
+
+        .hero-banner {
+            margin: 32px 0;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            min-height: 400px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 60px;
+            max-width: 600px;
+            color: white;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            opacity: 0.9;
+            margin-bottom: 32px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 32px;
+            margin-bottom: 32px;
+            justify-content: start;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            display: block;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 16px;
+        }
+
+        .cta-primary {
+            background: white;
+            color: var(--primary);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .cta-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .hero-visual {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background-image: url('/api/placeholder/800/400');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+        }
+
+        .section {
+            margin: 48px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .view-all-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: gap 0.2s ease;
+        }
+
+        .view-all-link:hover {
+            gap: 8px;
+        }
+
+        .stream-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .stream-card {
+            background: var(--surface);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stream-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stream-thumbnail {
+            position: relative;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+        }
+
+        .stream-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .stream-card:hover .stream-thumbnail img {
+            transform: scale(1.05);
+        }
+
+        .live-indicator {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--danger);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .promotion-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--success);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .viewer-count {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(4px);
+        }
+
+        .products-preview {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 12px 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .stream-card:hover .products-preview {
+            transform: translateY(0);
+        }
+
+        .product-thumbnails {
+            display: flex;
+            gap: 8px;
+        }
+
+        .product-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        .product-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .stream-details {
+            padding: 16px;
+        }
+
+        .stream-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .creator-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .creator-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .creator-name {
+            font-weight: 500;
+        }
+
+        .stream-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-tag {
+            background: var(--background);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .store-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .creator-spotlight {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 48px;
+            margin: 64px 0;
+            box-shadow: var(--shadow-md);
+        }
+
+        .creator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .creator-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .creator-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .creator-card-header {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .creator-verified {
+            position: absolute;
+            bottom: 0;
+            right: calc(50% - 40px);
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 3px solid var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .creator-name-large {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .creator-category {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .creator-stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .creator-stat {
+            text-align: center;
+        }
+
+        .creator-stat-value {
+            font-weight: 600;
+            display: block;
+        }
+
+        .creator-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .follow-button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .creator-card:hover .follow-button {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .follow-button:hover {
+            background: var(--gradient-hover);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 16px;
+            }
+
+            .search-container {
+                display: none;
+            }
+
+            .hero-content {
+                padding: 40px 24px;
+            }
+
+            .hero-title {
+                font-size: 32px;
+            }
+
+            .hero-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .creator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .creator-spotlight {
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 28px;
+            }
+
+            .hero-subtitle {
+                font-size: 16px;
+            }
+
+            .hero-stats {
+                gap: 12px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+            }
+
+            .cta-primary, .cta-secondary {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo-wrapper">
+                <img style="height:40px;" src="logo.png" />
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search creators, products, or live shows...">
+                <button class="search-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="nav-actions">
+                <div class="region-badge">
+                    <span>🌎</span>
+                    <span>Global</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <button class="go-live-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M23 7l-7 5 7 5V7z"></path>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                    Go Live
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <nav class="niche-nav">
+            <button class="niche-btn active" data-niche="all">All</button>
+            <button class="niche-btn" data-niche="fashion">Fashion</button>
+            <button class="niche-btn" data-niche="beauty">Beauty</button>
+            <button class="niche-btn" data-niche="wellness">Wellness</button>
+            <button class="niche-btn" data-niche="fitness">Fitness</button>
+            <button class="niche-btn" data-niche="gadgets">Tech & Gadgets</button>
+            <button class="niche-btn" data-niche="home">Home & Decor</button>
+        </nav>
+
+        <div class="hero-banner">
+            <div class="hero-content">
+                <h1 class="hero-title">Shop Live with Fashion & Beauty Creators</h1>
+                <p class="hero-subtitle">Discover authentic products through live shopping experiences with top creators</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">1,000+</span>
+                        <span class="stat-label">Creators</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">100k+</span>
+                        <span class="stat-label">Products</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">24/7</span>
+                        <span class="stat-label">Live Shows</span>
+                    </div>
+                </div>
+                <div class="hero-ctas">
+                    <a href="#" class="cta-primary">Start Watching</a>
+                    <a href="#" class="cta-secondary">Become a Creator</a>
+                </div>
+            </div>
+            <div class="hero-visual"></div>
+        </div>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Live Now</h2>
+                <a href="#" class="view-all-link">View All <span>→</span></a>
+            </div>
+            <div class="stream-grid">
+                <div class="stream-card" data-niche="beauty">
+                    <div class="stream-thumbnail">
+                        <img src="cover4.png" alt="Live stream">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </div>
+                        <div class="promotion-badge">40% OFF</div>
+                        <div class="viewer-count">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            2.4K watching
+                        </div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="cover2.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Korean Skincare Routine - Glass Skin Tutorial</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">SK</div>
+                            <span class="creator-name">Sarah Kim</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Beauty</span>
+                            <a href="#" class="store-link">Visit Store →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stream-card" data-niche="fashion">
+                    <div class="stream-thumbnail">
+                        <img src="cover3.png" alt="Live stream">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </div>
+                        <div class="promotion-badge">BOGO</div>
+                        <div class="viewer-count">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            1.8K watching
+                        </div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="cover3.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Summer Fashion Haul - Sustainable Brands You'll Love</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">EC</div>
+                            <span class="creator-name">Emma Chen</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Fashion</span>
+                            <a href="#" class="store-link">Visit Store →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stream-card" data-niche="wellness">
+                    <div class="stream-thumbnail">
+                        <img src="cover2.png" alt="Live stream">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </div>
+                        <div class="promotion-badge">Free Shipping</div>
+                        <div class="viewer-count">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            956 watching
+                        </div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Wellness Wednesday: Morning Routine Essentials</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">ML</div>
+                            <span class="creator-name">Maya Lopez</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Wellness</span>
+                            <a href="#" class="store-link">Visit Store →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="creator-spotlight">
+            <div class="section-header">
+                <h2 class="section-title">Top Creators to Follow</h2>
+                <a href="#" class="view-all-link">Explore All <span>→</span></a>
+            </div>
+            <div class="creator-grid">
+                <div class="creator-card">
+                    <div class="creator-card-header">
+                        <div class="creator-avatar-large" style="background-image:url('user1.jpg');"></div>
+                        <div class="creator-verified">✓</div>
+                    </div>
+                    <h3 class="creator-name-large">Alex Jordan</h3>
+                    <p class="creator-category">Fashion Influencer</p>
+                    <div class="creator-stats">
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">524K</span>
+                            <span class="creator-stat-label">Followers</span>
+                        </div>
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">142</span>
+                            <span class="creator-stat-label">Live Shows</span>
+                        </div>
+                    </div>
+                    <button class="follow-button">Follow</button>
+                </div>
+
+                <div class="creator-card">
+                    <div class="creator-card-header">
+                        <div class="creator-avatar-large">RB</div>
+                        <div class="creator-verified">✓</div>
+                    </div>
+                    <h3 class="creator-name-large">Rachel Brooks</h3>
+                    <p class="creator-category">Beauty Expert</p>
+                    <div class="creator-stats">
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">367K</span>
+                            <span class="creator-stat-label">Followers</span>
+                        </div>
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">89</span>
+                            <span class="creator-stat-label">Live Shows</span>
+                        </div>
+                    </div>
+                    <button class="follow-button">Follow</button>
+                </div>
+
+                <div class="creator-card">
+                    <div class="creator-card-header">
+                        <div class="creator-avatar-large" style="background-image:url('user2.jpg');"></div>
+                        <div class="creator-verified">✓</div>
+                    </div>
+                    <h3 class="creator-name-large">David Wong</h3>
+                    <p class="creator-category">Fitness Coach</p>
+                    <div class="creator-stats">
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">289K</span>
+                            <span class="creator-stat-label">Followers</span>
+                        </div>
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">67</span>
+                            <span class="creator-stat-label">Live Shows</span>
+                        </div>
+                    </div>
+                    <button class="follow-button">Follow</button>
+                </div>
+
+                <div class="creator-card">
+                    <div class="creator-card-header">
+						<div class="creator-avatar-large" style="background-image:url('user3.jpg');"></div>
+                        <div class="creator-verified">✓</div>
+                    </div>
+                    <h3 class="creator-name-large">Sofia Patel</h3>
+                    <p class="creator-category">Wellness Guide</p>
+                    <div class="creator-stats">
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">198K</span>
+                            <span class="creator-stat-label">Followers</span>
+                        </div>
+                        <div class="creator-stat">
+                            <span class="creator-stat-value">45</span>
+                            <span class="creator-stat-label">Live Shows</span>
+                        </div>
+                    </div>
+                    <button class="follow-button">Follow</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Starting Soon</h2>
+                <a href="#" class="view-all-link">View Schedule <span>→</span></a>
+            </div>
+            <div class="stream-grid">
+                <div class="stream-card" data-niche="fashion">
+                    <div class="stream-thumbnail">
+                        <img src="cover1.png" alt="Upcoming stream">
+                        <div class="promotion-badge">Starts in 30m</div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Capsule Wardrobe Building: 10 Essential Pieces</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">LM</div>
+                            <span class="creator-name">Lisa Martinez</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Fashion</span>
+                            <a href="#" class="store-link">Set Reminder →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stream-card" data-niche="beauty">
+                    <div class="stream-thumbnail">
+                        <img src="cover1.png" alt="Upcoming stream">
+                        <div class="promotion-badge">Tomorrow 8PM</div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Clean Beauty Masterclass: Non-Toxic Must-Haves</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">JT</div>
+                            <span class="creator-name">Jamie Taylor</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Beauty</span>
+                            <a href="#" class="store-link">Set Reminder →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Niche filtering
+        const nicheButtons = document.querySelectorAll('.niche-btn');
+        const streamCards = document.querySelectorAll('.stream-card');
+
+        nicheButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                nicheButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const selectedNiche = button.dataset.niche;
+                
+                streamCards.forEach(card => {
+                    if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Follow button interaction
+        const followButtons = document.querySelectorAll('.follow-button');
+        followButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (button.textContent === 'Follow') {
+                    button.textContent = 'Following';
+                    button.style.background = 'var(--success)';
+                } else {
+                    button.textContent = 'Follow';
+                    button.style.background = '';
+                }
+            });
+        });
+
+        // Region selector placeholder
+        const regionBadge = document.querySelector('.region-badge');
+        regionBadge.addEventListener('click', () => {
+            console.log('Region selector clicked');
+        });
+    </script>
+</body>
+</html>
