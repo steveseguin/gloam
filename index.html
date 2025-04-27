@@ -177,11 +177,13 @@
             transform: translateY(-1px);
         }
 
-        .main-content {
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+.main-content {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 24px;
+    /* Add subtle content fade-in */
+    animation: fadeIn 0.5s ease-out;
+}
 
         .niche-nav {
             display: flex;
@@ -218,16 +220,25 @@
             color: var(--text);
         }
 
-        .hero-banner {
-            margin: 32px 0;
-            border-radius: 24px;
-            overflow: hidden;
-            position: relative;
-            min-height: 400px;
-            background: var(--gradient-primary);
-            display: flex;
-            align-items: center;
-        }
+.hero-banner {
+    margin: 32px 0;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    min-height: 400px;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    /* Add subtle animation */
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
 
         .hero-content {
             position: relative;
@@ -359,19 +370,29 @@
             gap: 24px;
         }
 
-        .stream-card {
-            background: var(--surface);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-        .stream-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
+.stream-card {
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    /* Add subtle gradient border */
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+.stream-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    /* Subtle gradient border on hover */
+    border: 1px solid rgba(107, 70, 193, 0.2);
+}
 
         .stream-thumbnail {
             position: relative;
@@ -390,21 +411,23 @@
             transform: scale(1.05);
         }
 
-        .live-indicator {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: var(--danger);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            animation: pulse 2s infinite;
-        }
+.live-indicator {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: var(--danger);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: pulse 2s infinite;
+    /* Add subtle glow */
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
 
         .live-dot {
             width: 8px;
@@ -712,6 +735,101 @@
                 text-align: center;
             }
         }
+		
+		<!-- Add this new CSS section after line 134 -->
+.canadian-badge {
+    position: absolute;
+    top: 12px;
+    left: 72px; /* Positioned next to LIVE badge */
+    background: #FF0000;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.canadian-badge::before {
+    content: '🍁';
+}
+.free-shipping-banner {
+    background: linear-gradient(135deg, #D64045 0%, #B03236 100%);
+    color: white;
+    padding: 12px 24px;
+    margin: 24px 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.free-shipping-banner::before {
+    content: '🍁';
+    font-size: 20px;
+}
+
+.canadian-badge {
+    position: absolute;
+    top: 12px;
+    left: 72px; /* Positioned next to LIVE badge */
+    background: #D64045;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.canadian-badge::before {
+    content: '🍁';
+}
+
+.canadian-creator-tag {
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #D64045;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.canadian-creator-tag::before {
+    content: '🍁';
+    font-size: 10px;
+}
+
+.canadian-product-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(214, 64, 69, 0.9);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
     </style>
 </head>
 <body>
@@ -721,7 +839,7 @@
                 <img style="height:40px;" src="logo.png" />
             </div>
             <div class="search-container">
-                <input type="text" class="search-input" placeholder="Search creators, products, or live shows...">
+                <input type="text" class="search-input" placeholder="Search beauty trends, fashion brands, or creator shows...">
                 <button class="search-button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -742,7 +860,7 @@
                         <path d="M23 7l-7 5 7 5V7z"></path>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                     </svg>
-                    Go Live
+                    Become a Creator
                 </button>
             </div>
         </div>
@@ -750,88 +868,96 @@
 
     <main class="main-content">
         <nav class="niche-nav">
-            <button class="niche-btn active" data-niche="all">All</button>
+            <button class="niche-btn active" data-niche="all">For You</button>
             <button class="niche-btn" data-niche="fashion">Fashion</button>
             <button class="niche-btn" data-niche="beauty">Beauty</button>
-            <button class="niche-btn" data-niche="wellness">Wellness</button>
-            <button class="niche-btn" data-niche="fitness">Fitness</button>
-            <button class="niche-btn" data-niche="gadgets">Tech & Gadgets</button>
-            <button class="niche-btn" data-niche="home">Home & Decor</button>
+            <button class="niche-btn" data-niche="fashion">Luxury</button>
+            <button class="niche-btn" data-niche="beauty">Skincare</button>
+            <button class="niche-btn" data-niche="fashion">Street Style</button>
+            <button class="niche-btn" data-niche="beauty">Makeup</button>
         </nav>
 
         <div class="hero-banner">
             <div class="hero-content">
-                <h1 class="hero-title">Shop Live with Fashion & Beauty Creators</h1>
-                <p class="hero-subtitle">Discover authentic products through live shopping experiences with top creators</p>
+                <h1 class="hero-title">The Future of Fashion & Beauty Shopping is Live</h1>
+                <p class="hero-subtitle">Shop directly from fashion and beauty creators you trust — in real-time, with exclusive offers</p>
                 <div class="hero-stats">
                     <div class="stat-item">
-                        <span class="stat-value">1,000+</span>
-                        <span class="stat-label">Creators</span>
+                        <span class="stat-value">50+</span>
+                        <span class="stat-label">Active Creators</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value">100k+</span>
-                        <span class="stat-label">Products</span>
+                        <span class="stat-value">$30K+</span>
+                        <span class="stat-label">Monthly GMV</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value">24/7</span>
-                        <span class="stat-label">Live Shows</span>
+                        <span class="stat-value">40%</span>
+                        <span class="stat-label">Conversion Rate</span>
                     </div>
                 </div>
                 <div class="hero-ctas">
-                    <a href="#" class="cta-primary">Start Watching</a>
-                    <a href="#" class="cta-secondary">Become a Creator</a>
+                    <a href="#" class="cta-primary">Start Shopping Live</a>
+                    <a href="#" class="cta-secondary">Apply as Creator</a>
                 </div>
             </div>
             <div class="hero-visual"></div>
         </div>
 
+		<div class="free-shipping-banner">
+			<span>BUY CANADIAN-MADE, GET FREE SHIPPING!</span>
+			<span style="font-weight: 400;">StageTEN covers shipping for all locally made products</span>
+		</div>
+
         <section class="section">
             <div class="section-header">
-                <h2 class="section-title">Live Now</h2>
+                <h2 class="section-title">Live Now — Fashion & Beauty Exclusives</h2>
                 <a href="#" class="view-all-link">View All <span>→</span></a>
             </div>
             <div class="stream-grid">
                 <div class="stream-card" data-niche="beauty">
-                    <div class="stream-thumbnail">
-                        <img src="cover4.png" alt="Live stream">
-                        <div class="live-indicator">
-                            <span class="live-dot"></span>
-                            LIVE
-                        </div>
-                        <div class="promotion-badge">40% OFF</div>
-                        <div class="viewer-count">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                            2.4K watching
-                        </div>
-                        <div class="products-preview">
-                            <div class="product-thumbnails">
-                                <div class="product-thumb">
-                                    <img src="product2.png" alt="Product">
-                                </div>
-                                <div class="product-thumb">
-                                    <img src="product1.png" alt="Product">
-                                </div>
-                                <div class="product-thumb">
-                                    <img src="cover2.png" alt="Product">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stream-details">
-                        <h3 class="stream-title">Korean Skincare Routine - Glass Skin Tutorial</h3>
-                        <div class="creator-info">
-                            <div class="creator-avatar">SK</div>
-                            <span class="creator-name">Sarah Kim</span>
-                        </div>
-                        <div class="stream-footer">
-                            <span class="category-tag">Beauty</span>
-                            <a href="#" class="store-link">Visit Store →</a>
-                        </div>
-                    </div>
-                </div>
+					<div class="stream-thumbnail">
+						<img src="cover4.png" alt="Live stream">
+						<div class="live-indicator">
+							<span class="live-dot"></span>
+							LIVE
+						</div>
+						<div class="canadian-badge">Canadian Made</div>
+						<div class="promotion-badge">40% OFF</div>
+						<div class="viewer-count">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+								<circle cx="12" cy="12" r="3"></circle>
+							</svg>
+							2.4K watching
+						</div>
+						<div class="products-preview">
+							<div class="product-thumbnails">
+								<div class="product-thumb">
+									<img src="product2.png" alt="Product">
+									<div class="canadian-product-badge">🍁</div>
+								</div>
+								<div class="product-thumb">
+									<img src="product1.png" alt="Product">
+								</div>
+								<div class="product-thumb">
+									<img src="cover2.png" alt="Product">
+									<div class="canadian-product-badge">🍁</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="stream-details">
+						<h3 class="stream-title">Korean Skincare Routine - Glass Skin Tutorial</h3>
+						<div class="creator-info">
+							<div class="creator-avatar">SK</div>
+							<span class="creator-name">Sarah Kim - Toronto</span>
+						</div>
+						<div class="stream-footer">
+							<span class="category-tag">Beauty</span>
+							<a href="#" class="store-link">Visit Store →</a>
+						</div>
+					</div>
+				</div>
 
                 <div class="stream-card" data-niche="fashion">
                     <div class="stream-thumbnail">
@@ -916,54 +1042,98 @@
                         </div>
                     </div>
                 </div>
+				
+				<div class="stream-card" data-niche="wellness">
+                    <div class="stream-thumbnail">
+                        <img src="cover2.png" alt="Live stream">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            LIVE
+                        </div>
+                        <div class="promotion-badge">Free Shipping</div>
+                        <div class="viewer-count">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            956 watching
+                        </div>
+                        <div class="products-preview">
+                            <div class="product-thumbnails">
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product2.png" alt="Product">
+                                </div>
+                                <div class="product-thumb">
+                                    <img src="product1.png" alt="Product">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stream-details">
+                        <h3 class="stream-title">Wellness Wednesday: Morning Routine Essentials</h3>
+                        <div class="creator-info">
+                            <div class="creator-avatar">ML</div>
+                            <span class="creator-name">Maya Lopez</span>
+                        </div>
+                        <div class="stream-footer">
+                            <span class="category-tag">Wellness</span>
+                            <a href="#" class="store-link">Visit Store →</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="creator-spotlight">
             <div class="section-header">
-                <h2 class="section-title">Top Creators to Follow</h2>
+                <h2 class="section-title">Top Fashion & Beauty Creators</h2>
                 <a href="#" class="view-all-link">Explore All <span>→</span></a>
             </div>
             <div class="creator-grid">
                 <div class="creator-card">
-                    <div class="creator-card-header">
-                        <div class="creator-avatar-large" style="background-image:url('user1.jpg');"></div>
-                        <div class="creator-verified">✓</div>
-                    </div>
-                    <h3 class="creator-name-large">Alex Jordan</h3>
-                    <p class="creator-category">Fashion Influencer</p>
-                    <div class="creator-stats">
-                        <div class="creator-stat">
-                            <span class="creator-stat-value">524K</span>
-                            <span class="creator-stat-label">Followers</span>
-                        </div>
-                        <div class="creator-stat">
-                            <span class="creator-stat-value">142</span>
-                            <span class="creator-stat-label">Live Shows</span>
-                        </div>
-                    </div>
-                    <button class="follow-button">Follow</button>
-                </div>
+					<div class="creator-card-header" style="position: relative;">
+						<div class="creator-avatar-large" style="background-image:url('user1.jpg');"></div>
+						<div class="creator-verified">✓</div>
+						<div class="canadian-creator-tag">Canadian Creator</div>
+					</div>
+					<h3 class="creator-name-large">Alex Jordan</h3>
+					<p class="creator-category">Fashion Influencer - Vancouver</p>
+					<div class="creator-stats">
+						<div class="creator-stat">
+							<span class="creator-stat-value">524K</span>
+							<span class="creator-stat-label">Followers</span>
+						</div>
+						<div class="creator-stat">
+							<span class="creator-stat-value">142</span>
+							<span class="creator-stat-label">Live Shows</span>
+						</div>
+					</div>
+					<button class="follow-button">Follow</button>
+				</div>
 
                 <div class="creator-card">
-                    <div class="creator-card-header">
-                        <div class="creator-avatar-large">RB</div>
-                        <div class="creator-verified">✓</div>
-                    </div>
-                    <h3 class="creator-name-large">Rachel Brooks</h3>
-                    <p class="creator-category">Beauty Expert</p>
-                    <div class="creator-stats">
-                        <div class="creator-stat">
-                            <span class="creator-stat-value">367K</span>
-                            <span class="creator-stat-label">Followers</span>
-                        </div>
-                        <div class="creator-stat">
-                            <span class="creator-stat-value">89</span>
-                            <span class="creator-stat-label">Live Shows</span>
-                        </div>
-                    </div>
-                    <button class="follow-button">Follow</button>
-                </div>
+					<div class="creator-card-header" style="position: relative;">
+						<div class="creator-avatar-large">RB</div>
+						<div class="creator-verified">✓</div>
+						<div class="canadian-creator-tag">Canadian Creator</div>
+					</div>
+					<h3 class="creator-name-large">Rachel Brooks</h3>
+					<p class="creator-category">Beauty Expert - Montreal</p>
+					<div class="creator-stats">
+						<div class="creator-stat">
+							<span class="creator-stat-value">367K</span>
+							<span class="creator-stat-label">Followers</span>
+						</div>
+						<div class="creator-stat">
+							<span class="creator-stat-value">89</span>
+							<span class="creator-stat-label">Live Shows</span>
+						</div>
+					</div>
+					<button class="follow-button">Follow</button>
+				</div>
 
                 <div class="creator-card">
                     <div class="creator-card-header">
@@ -1014,35 +1184,38 @@
             </div>
             <div class="stream-grid">
                 <div class="stream-card" data-niche="fashion">
-                    <div class="stream-thumbnail">
-                        <img src="cover1.png" alt="Upcoming stream">
-                        <div class="promotion-badge">Starts in 30m</div>
-                        <div class="products-preview">
-                            <div class="product-thumbnails">
-                                <div class="product-thumb">
-                                    <img src="product1.png" alt="Product">
-                                </div>
-                                <div class="product-thumb">
-                                    <img src="product2.png" alt="Product">
-                                </div>
-                                <div class="product-thumb">
-                                    <img src="product1.png" alt="Product">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stream-details">
-                        <h3 class="stream-title">Capsule Wardrobe Building: 10 Essential Pieces</h3>
-                        <div class="creator-info">
-                            <div class="creator-avatar">LM</div>
-                            <span class="creator-name">Lisa Martinez</span>
-                        </div>
-                        <div class="stream-footer">
-                            <span class="category-tag">Fashion</span>
-                            <a href="#" class="store-link">Set Reminder →</a>
-                        </div>
-                    </div>
-                </div>
+					<div class="stream-thumbnail">
+						<img src="cover1.png" alt="Upcoming stream">
+						<div class="canadian-badge">Canadian Made</div>
+						<div class="promotion-badge">Starts in 30m</div>
+						<div class="products-preview">
+							<div class="product-thumbnails">
+								<div class="product-thumb">
+									<img src="product1.png" alt="Product">
+									<div class="canadian-product-badge">🍁</div>
+								</div>
+								<div class="product-thumb">
+									<img src="product2.png" alt="Product">
+								</div>
+								<div class="product-thumb">
+									<img src="product1.png" alt="Product">
+									<div class="canadian-product-badge">🍁</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="stream-details">
+						<h3 class="stream-title">Capsule Wardrobe Building: 10 Essential Pieces</h3>
+						<div class="creator-info">
+							<div class="creator-avatar">LM</div>
+							<span class="creator-name">Lisa Martinez - Calgary</span>
+						</div>
+						<div class="stream-footer">
+							<span class="category-tag">Fashion</span>
+							<a href="#" class="store-link">Set Reminder →</a>
+						</div>
+					</div>
+				</div>
 
                 <div class="stream-card" data-niche="beauty">
                     <div class="stream-thumbnail">
@@ -1076,7 +1249,76 @@
                 </div>
             </div>
         </section>
+        
+        <section class="creator-benefits" style="background: var(--gradient-primary); color: white; padding: 64px 24px; border-radius: 24px; margin: 64px 0; text-align: center;">
+            <h2 style="font-size: 36px; margin-bottom: 16px;">Become a Stage TEN Creator</h2>
+            <p style="font-size: 20px; opacity: 0.9; margin-bottom: 48px;">Join the next generation of live shopping pioneers</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px; max-width: 1200px; margin: 0 auto;">
+                <div style="background: rgba(255,255,255,0.1); padding: 24px; border-radius: 16px;">
+                    <h3 style="font-size: 48px; margin-bottom: 8px;">$500</h3>
+                    <p style="font-size: 18px; margin-bottom: 8px;">Guaranteed First Show</p>
+                    <p style="font-size: 14px; opacity: 0.8;">Plus commissions on sales</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 24px; border-radius: 16px;">
+                    <h3 style="font-size: 48px; margin-bottom: 8px;">90%</h3>
+                    <p style="font-size: 18px; margin-bottom: 8px;">Revenue Share</p>
+                    <p style="font-size: 14px; opacity: 0.8;">Highest in the industry</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 24px; border-radius: 16px;">
+                    <h3 style="font-size: 48px; margin-bottom: 8px;">24h</h3>
+                    <p style="font-size: 18px; margin-bottom: 8px;">Fast Payouts</p>
+                    <p style="font-size: 14px; opacity: 0.8;">Get paid next day</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 24px; border-radius: 16px;">
+                    <h3 style="font-size: 48px; margin-bottom: 8px;">10K+</h3>
+                    <p style="font-size: 18px; margin-bottom: 8px;">Active Shoppers</p>
+                    <p style="font-size: 14px; opacity: 0.8;">Growing community</p>
+                </div>
+            </div>
+            <button style="background: white; color: var(--primary); border: none; padding: 16px 32px; border-radius: 8px; font-size: 18px; font-weight: 600; margin-top: 48px; cursor: pointer;">Apply Now - Limited Spots</button>
+        </section>
     </main>
+
+    <footer style="background: var(--surface); border-top: 1px solid var(--border); padding: 48px 24px; margin-top: 64px;">
+        <div style="max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px;">
+            <div>
+                <h4 style="font-weight: 600; margin-bottom: 16px;">For Creators</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Apply to Host</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Creator Resources</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Success Stories</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-weight: 600; margin-bottom: 16px;">For Shoppers</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Live Shows</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Fashion Picks</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Beauty Exclusives</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-weight: 600; margin-bottom: 16px;">Company</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">About Us</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Careers</a></li>
+                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Press</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="font-weight: 600; margin-bottom: 16px;">Connect</h4>
+                <p style="color: var(--text-muted); margin-bottom: 16px;">Join the future of live shopping</p>
+                <div style="display: flex; gap: 16px;">
+                    <a href="#" style="color: var(--primary); text-decoration: none;">Instagram</a>
+                    <a href="#" style="color: var(--primary); text-decoration: none;">TikTok</a>
+                    <a href="#" style="color: var(--primary); text-decoration: none;">YouTube</a>
+                </div>
+            </div>
+        </div>
+		<div style="max-width: 1440px; margin: 32px auto 0; padding-top: 32px; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 14px;">
+			© 2025 Stage TEN. Canada's first global live shopping network. 🍁 Proudly Canadian.
+		</div>
+    </footer>
 
     <script>
         // Niche filtering
