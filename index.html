@@ -1471,7 +1471,7 @@ function createStreamCard(stream, index) {
     const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
     return `
-    <div class="stream-card" data-niche="${category.toLowerCase()}">
+    <div class="stream-card" data-niche="${category.toLowerCase()}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="stream-thumbnail">
             <img src="cover${(index % 4) + 1}.png" alt="${stream.shopName}">
             ${stream.isLive ? `
@@ -1512,9 +1512,16 @@ function createStreamCard(stream, index) {
             </div>
             <div class="stream-footer">
                 <span class="category-tag">${category}</span>
-                <a href="${stream.watchUrl}" class="store-link" target="_blank">
-                    ${stream.isLive ? 'Watch Live →' : 'Set Reminder →'}
-                </a>
+                <div class="action-links" style="display:flex; gap:10px;">
+                    <a href="${stream.watchUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
+                        ${stream.isLive ? 'Watch Live →' : 'Set Reminder →'}
+                    </a>
+                    ${stream.shopUrl ? `
+                    <a href="${stream.shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
+                        Shop →
+                    </a>
+                    ` : ''}
+                </div>
             </div>
         </div>
     </div>
@@ -1542,7 +1549,7 @@ function createCreatorCard(stream, index) {
     const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
     return `
-    <div class="creator-card">
+    <div class="creator-card" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="creator-card-header" style="position: relative;">
             <div class="creator-avatar-large" ${index % 2 === 0 ? `style="background-image:url('user${(index % 3) + 1}.jpg');"` : ''}>${index % 2 !== 0 ? avatarInitials : ''}</div>
             <div class="creator-verified">✓</div>
@@ -1560,7 +1567,12 @@ function createCreatorCard(stream, index) {
                 <span class="creator-stat-label">Live Shows</span>
             </div>
         </div>
-        <button class="follow-button">Follow</button>
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button class="follow-button" onclick="event.stopPropagation();">Follow</button>
+            ${stream.shopUrl ? `
+            <a href="${stream.shopUrl}" target="_blank" onclick="event.stopPropagation();" style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; border: 1px solid var(--primary); color: var(--primary); text-decoration: none; font-weight: 600;">Shop</a>
+            ` : ''}
+        </div>
     </div>
     `;
 }
@@ -1640,6 +1652,7 @@ function initializeEventListeners() {
     const followButtons = document.querySelectorAll('.follow-button');
     followButtons.forEach(button => {
         button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent clicking through to parent element
             if (button.textContent === 'Follow') {
                 button.textContent = 'Following';
                 button.style.background = 'var(--success)';
@@ -1654,6 +1667,22 @@ function initializeEventListeners() {
     const regionBadge = document.querySelector('.region-badge');
     regionBadge.addEventListener('click', () => {
         console.log('Region selector clicked');
+    });
+    
+    // Add hover effects to cards to indicate they're clickable
+    const allCards = document.querySelectorAll('.stream-card, .creator-card');
+    allCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)';
+            card.style.boxShadow = 'var(--shadow-lg)';
+            card.style.borderColor = 'var(--primary-light)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+            card.style.boxShadow = '';
+            card.style.borderColor = '';
+        });
     });
 }
 
