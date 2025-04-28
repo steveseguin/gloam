@@ -1319,48 +1319,346 @@
 			© 2025 Stage TEN. Canada's first global live shopping network. 🍁 Proudly Canadian.
 		</div>
     </footer>
+<!-- Replace the existing script tag with this -->
+<script>
+// Function to fetch data from the endpoint
+async function fetchStreamData() {
+    try {
+        const response = await fetch('https://stageten-gloam.vdo.workers.dev/');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to example data if API fails
+        return getFallbackData();
+    }
+}
 
-    <script>
-        // Niche filtering
-        const nicheButtons = document.querySelectorAll('.niche-btn');
-        const streamCards = document.querySelectorAll('.stream-card');
+// Fallback data based on your example
+function getFallbackData() {
+    return [
+        {
+            "_metadata": {
+                "jsRuntime": "node",
+                "nodeVersion": "v20.18.3"
+            },
+            "channel": "server",
+            "context": {
+                "library": {
+                    "name": "@segment/analytics-node",
+                    "version": "2.0.0"
+                }
+            },
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "integrations": {},
+            "messageId": "node-next-1745615189110-5f164163-52ad-4058-b2c2-c1fb30098505",
+            "originalTimestamp": "2025-04-25T21:06:29.109Z",
+            "projectId": "ieWx4BBfzZwJS1mS4b88cz",
+            "properties": {
+                "affiliateCommunityMemberId": null,
+                "affiliateEmail": null,
+                "affiliateUsername": null,
+                "email": "parkermaisondatelier@gmail.com",
+                "isShopOwner": true,
+                "shopAppUrl": "https://shop.app/mini/stageten?shop_id=72737784054",
+                "shopDomain": "dsqg0k-yw.myshopify.com",
+                "shopName": "Parker Maison D'Atelier",
+                "shopUrl": "https://parkermaison.com",
+                "watchUrl": "https://play.stageten.tv/channel/4ba6b8f4-13dc-453e-bc7e-de8600c97595"
+            },
+            "timestamp": "2025-04-25T21:06:29.345Z",
+            "type": "track",
+            "userId": "dsqg0k-yw.myshopify.com"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189120-5f164163-52ad-4058-b2c2-c1fb30098506",
+            "originalTimestamp": "2025-04-25T19:06:29.109Z",
+            "properties": {
+                "email": "canadiancreative@gmail.com",
+                "shopDomain": "canadian-style.myshopify.com",
+                "shopName": "Canadian Creative Collections",
+                "shopUrl": "https://canadiancreative.com",
+                "watchUrl": "https://play.stageten.tv/channel/5ca7b9f5-24dc-463e-ac7e-ef7600d97596"
+            },
+            "timestamp": "2025-04-25T19:06:29.345Z"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189130-5f164163-52ad-4058-b2c2-c1fb30098507",
+            "originalTimestamp": "2025-04-25T20:36:29.109Z",
+            "properties": {
+                "email": "fashionforward@gmail.com",
+                "shopDomain": "fashion-forward.myshopify.com",
+                "shopName": "Fashion Forward Studio",
+                "shopUrl": "https://fashionforwardstudio.com",
+                "watchUrl": "https://play.stageten.tv/channel/6da8b9f6-35dc-473e-bd7e-fg8700e97597"
+            },
+            "timestamp": "2025-04-25T20:36:29.345Z"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189140-5f164163-52ad-4058-b2c2-c1fb30098508",
+            "originalTimestamp": "2025-04-25T22:16:29.109Z",
+            "properties": {
+                "email": "beautyessentials@gmail.com",
+                "shopDomain": "beauty-essentials.myshopify.com",
+                "shopName": "Beauty Essentials",
+                "shopUrl": "https://beautyessentials.com",
+                "watchUrl": "https://play.stageten.tv/channel/7ea9b9f7-46dc-483e-ce7e-gh9800f97598"
+            },
+            "timestamp": "2025-04-25T22:16:29.345Z"
+        }
+    ];
+}
 
-        nicheButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                nicheButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                const selectedNiche = button.dataset.niche;
-                
-                streamCards.forEach(card => {
-                    if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
+// Process stream data
+function processStreamData(data) {
+    if (!Array.isArray(data)) {
+        console.error('Data is not an array');
+        return [];
+    }
+
+    const streams = data.filter(item => 
+        item.event === 'tv.stageten.plugin-commerce.output.live' && 
+        item.properties && 
+        item.properties.watchUrl
+    );
+
+    const currentTime = Date.now();
+    const fourHoursInMs = 4 * 60 * 60 * 1000;
+
+    return streams.map(stream => {
+        const timestamp = new Date(stream.timestamp || stream.originalTimestamp).getTime();
+        const isLive = (currentTime - timestamp) < fourHoursInMs;
+        
+        return {
+            shopName: stream.properties.shopName,
+            shopDomain: stream.properties.shopDomain,
+            shopUrl: stream.properties.shopUrl,
+            watchUrl: stream.properties.watchUrl,
+            timestamp: timestamp,
+            isLive: isLive,
+            email: stream.properties.email,
+            channelId: stream.properties.watchUrl.split('/').pop()
+        };
+    });
+}
+
+// Generate HTML for stream cards
+function createStreamCard(stream, index) {
+    // Randomize some data for variety
+    const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
+    const viewerCounts = ['1.2K', '956', '2.4K', '1.8K', '3.1K', '875'];
+    const discounts = ['40% OFF', 'BOGO', 'Free Shipping', '20% OFF', 'Buy 2 Get 1'];
+    
+    const category = categories[index % categories.length];
+    const viewerCount = viewerCounts[index % viewerCounts.length];
+    const discount = discounts[index % discounts.length];
+    
+    // Determine if it's Canadian based on domain or name
+    const isCanadian = stream.shopDomain.includes('ca') || 
+                        stream.shopName.toLowerCase().includes('canadian') || 
+                        index % 3 === 0;  // Make every third one Canadian for variety
+    
+    // First letter of shop name for avatar
+    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
+    
+    // Generate random location for Canadian creators
+    const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
+    const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    
+    return `
+    <div class="stream-card" data-niche="${category.toLowerCase()}">
+        <div class="stream-thumbnail">
+            <img src="cover${(index % 4) + 1}.png" alt="${stream.shopName}">
+            ${stream.isLive ? `
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                LIVE
+            </div>` : ''}
+            ${isCanadian ? `<div class="canadian-badge">Canadian Made</div>` : ''}
+            <div class="promotion-badge">${stream.isLive ? discount : 'Starts in 30m'}</div>
+            <div class="viewer-count">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                ${stream.isLive ? `${viewerCount} watching` : 'Set reminder'}
+            </div>
+            <div class="products-preview">
+                <div class="product-thumbnails">
+                    <div class="product-thumb">
+                        <img src="product${index % 2 + 1}.png" alt="Product">
+                        ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+                    </div>
+                    <div class="product-thumb">
+                        <img src="product${(index + 1) % 2 + 1}.png" alt="Product">
+                    </div>
+                    <div class="product-thumb">
+                        <img src="cover${(index % 4) + 1}.png" alt="Product">
+                        ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="stream-details">
+            <h3 class="stream-title">${stream.shopName} - Live Shopping Experience</h3>
+            <div class="creator-info">
+                <div class="creator-avatar">${avatarInitials}</div>
+                <span class="creator-name">${stream.shopName}${location}</span>
+            </div>
+            <div class="stream-footer">
+                <span class="category-tag">${category}</span>
+                <a href="${stream.watchUrl}" class="store-link" target="_blank">
+                    ${stream.isLive ? 'Watch Live →' : 'Set Reminder →'}
+                </a>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+// Generate HTML for creator cards
+function createCreatorCard(stream, index) {
+    const isCanadian = stream.shopDomain.includes('ca') || 
+                        stream.shopName.toLowerCase().includes('canadian') || 
+                        index % 3 === 0;
+                        
+    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
+    
+    // Generate random stats
+    const followers = Math.floor(Math.random() * 500) + 150 + 'K';
+    const shows = Math.floor(Math.random() * 100) + 40;
+    
+    // Generate random categories
+    const categories = ['Fashion Influencer', 'Beauty Expert', 'Style Consultant', 'Makeup Artist', 'Wellness Guide'];
+    const category = categories[index % categories.length];
+    
+    // Generate random location for Canadian creators
+    const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
+    const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    
+    return `
+    <div class="creator-card">
+        <div class="creator-card-header" style="position: relative;">
+            <div class="creator-avatar-large" ${index % 2 === 0 ? `style="background-image:url('user${(index % 3) + 1}.jpg');"` : ''}>${index % 2 !== 0 ? avatarInitials : ''}</div>
+            <div class="creator-verified">✓</div>
+            ${isCanadian ? `<div class="canadian-creator-tag">Canadian Creator</div>` : ''}
+        </div>
+        <h3 class="creator-name-large">${stream.shopName.split(' ')[0]}</h3>
+        <p class="creator-category">${category}${location}</p>
+        <div class="creator-stats">
+            <div class="creator-stat">
+                <span class="creator-stat-value">${followers}</span>
+                <span class="creator-stat-label">Followers</span>
+            </div>
+            <div class="creator-stat">
+                <span class="creator-stat-value">${shows}</span>
+                <span class="creator-stat-label">Live Shows</span>
+            </div>
+        </div>
+        <button class="follow-button">Follow</button>
+    </div>
+    `;
+}
+
+// Populate the stream section and creator section with data
+async function populateStreamData() {
+    const data = await fetchStreamData();
+    const streams = processStreamData(data);
+    
+    if (streams.length === 0) {
+        console.error('No stream data available');
+        return;
+    }
+    
+    // Get the container for live streams
+    const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
+    if (liveStreamContainer) {
+        liveStreamContainer.innerHTML = ''; // Clear existing content
+        // Add the first 4 streams to the live section
+        const liveStreams = streams.slice(0, 4);
+        liveStreams.forEach((stream, index) => {
+            liveStreamContainer.innerHTML += createStreamCard(stream, index);
         });
+    }
+    
+    // Get the container for starting soon streams
+    const upcomingStreamContainer = document.querySelector('.section:nth-of-type(3) .stream-grid');
+    if (upcomingStreamContainer) {
+        upcomingStreamContainer.innerHTML = ''; // Clear existing content
+        // Add the next 2 streams to the upcoming section
+        const upcomingStreams = streams.slice(0, 2);
+        upcomingStreams.forEach((stream, index) => {
+            // Override isLive for upcoming streams
+            const upcomingStream = {...stream, isLive: false};
+            upcomingStreamContainer.innerHTML += createStreamCard(upcomingStream, index + 4);
+        });
+    }
+    
+    // Get the container for creators
+    const creatorContainer = document.querySelector('.creator-grid');
+    if (creatorContainer) {
+        creatorContainer.innerHTML = ''; // Clear existing content
+        // Use all streams as creators
+        streams.forEach((stream, index) => {
+            creatorContainer.innerHTML += createCreatorCard(stream, index);
+        });
+    }
+    
+    // Reinitialize event listeners for the newly created elements
+    initializeEventListeners();
+}
 
-        // Follow button interaction
-        const followButtons = document.querySelectorAll('.follow-button');
-        followButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                if (button.textContent === 'Follow') {
-                    button.textContent = 'Following';
-                    button.style.background = 'var(--success)';
+// Initialize event listeners for interactive elements
+function initializeEventListeners() {
+    // Niche filtering
+    const nicheButtons = document.querySelectorAll('.niche-btn');
+    const streamCards = document.querySelectorAll('.stream-card');
+
+    nicheButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            nicheButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            const selectedNiche = button.dataset.niche;
+            
+            streamCards.forEach(card => {
+                if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
+                    card.style.display = 'block';
                 } else {
-                    button.textContent = 'Follow';
-                    button.style.background = '';
+                    card.style.display = 'none';
                 }
             });
         });
+    });
 
-        // Region selector placeholder
-        const regionBadge = document.querySelector('.region-badge');
-        regionBadge.addEventListener('click', () => {
-            console.log('Region selector clicked');
+    // Follow button interaction
+    const followButtons = document.querySelectorAll('.follow-button');
+    followButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            if (button.textContent === 'Follow') {
+                button.textContent = 'Following';
+                button.style.background = 'var(--success)';
+            } else {
+                button.textContent = 'Follow';
+                button.style.background = '';
+            }
         });
-    </script>
+    });
+
+    // Region selector placeholder
+    const regionBadge = document.querySelector('.region-badge');
+    regionBadge.addEventListener('click', () => {
+        console.log('Region selector clicked');
+    });
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', populateStreamData);
+</script>
 </body>
 </html>
