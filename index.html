@@ -1331,8 +1331,7 @@ async function fetchStreamData() {
         return await response.json();
     } catch (error) {
         console.error('Error fetching data:', error);
-        // Fallback to example data if API fails
-        return getFallbackData();
+        return null;
     }
 }
 
@@ -1701,13 +1700,60 @@ function createCreatorCard(stream, index) {
     `;
 }
 
-// Populate the stream section and creator section with enhanced data
-async function populateStreamData() {
-    // Now we get enhanced streams directly from our worker
-    const enhancedStreams = await fetchStreamData();
+// Clear the existing content and show loading states
+function showLoadingState() {
+    const containers = [
+        document.querySelector('.section:nth-of-type(1) .stream-grid'),
+        document.querySelector('.section:nth-of-type(3) .stream-grid'),
+        document.querySelector('.creator-grid')
+    ];
     
-    if (!enhancedStreams || enhancedStreams.length === 0) {
-        console.error('No stream data available');
+    containers.forEach(container => {
+        if (container) {
+            container.innerHTML = `
+                <div class="stream-card" style="display: flex; align-items: center; justify-content: center; height: 200px; background: var(--background);">
+                    <div style="text-align: center;">
+                        <div style="width: 40px; height: 40px; border: 3px solid var(--primary); border-top-color: transparent; border-radius: 50%; margin: 0 auto 16px; animation: spin 1s linear infinite;"></div>
+                        <p>Loading content...</p>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    // Add spin animation if not already present
+    if (!document.querySelector('style#loading-animation')) {
+        const style = document.createElement('style');
+        style.id = 'loading-animation';
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Populate the stream section and creator section with data
+async function populateStreamData() {
+    // Show loading state
+    showLoadingState();
+    
+    // Try to get data from primary source
+    let streams = await fetchStreamData();
+    
+    // If no data available from primary source, use fallback
+    if (!streams) {
+        console.log('No data from primary API, using fallback data');
+        streams = processStreamData(getFallbackData());
+    } else {
+        // Process the data if it's from the primary source
+        streams = processStreamData(streams);
+    }
+    
+    if (!streams || streams.length === 0) {
+        console.error('No stream data available after processing');
         return;
     }
     
@@ -1716,7 +1762,7 @@ async function populateStreamData() {
     if (liveStreamContainer) {
         liveStreamContainer.innerHTML = ''; // Clear existing content
         // Add the first 4 streams to the live section
-        const liveStreams = enhancedStreams.slice(0, 4);
+        const liveStreams = streams.slice(0, 4);
         liveStreams.forEach((stream, index) => {
             liveStreamContainer.innerHTML += createStreamCard(stream, index);
         });
@@ -1727,7 +1773,7 @@ async function populateStreamData() {
     if (upcomingStreamContainer) {
         upcomingStreamContainer.innerHTML = ''; // Clear existing content
         // Add the next 2 streams to the upcoming section
-        const upcomingStreams = enhancedStreams.slice(0, 2);
+        const upcomingStreams = streams.slice(0, 2);
         upcomingStreams.forEach((stream, index) => {
             // Override isLive for upcoming streams
             const upcomingStream = {...stream, isLive: false};
@@ -1740,13 +1786,168 @@ async function populateStreamData() {
     if (creatorContainer) {
         creatorContainer.innerHTML = ''; // Clear existing content
         // Use all streams as creators
-        enhancedStreams.forEach((stream, index) => {
+        streams.forEach((stream, index) => {
             creatorContainer.innerHTML += createCreatorCard(stream, index);
         });
     }
     
     // Reinitialize event listeners for the newly created elements
     initializeEventListeners();
+    
+    // Now try to enhance the data with additional details
+    enhanceStreamDetails(streams);
+}
+
+// Enhance stream details with additional data from StageTEN
+async function enhanceStreamDetails(streams) {
+    // We'll process the streams in parallel for efficiency
+    const enhancementPromises = streams.map(enhanceStreamWithStageTENData);
+    
+    try {
+        const enhancedStreams = await Promise.all(enhancementPromises);
+        
+        // Now that we have enhanced data, update the UI
+        updateStreamUI(enhancedStreams);
+    } catch (error) {
+        console.error('Error enhancing stream details:', error);
+    }
+}
+
+// Update the UI with enhanced stream data
+function updateStreamUI(enhancedStreams) {
+    // Update live streams section
+    const liveStreams = enhancedStreams.slice(0, 4);
+    liveStreams.forEach((stream, index) => {
+        // Find the corresponding card
+        const card = document.querySelector(`.section:nth-of-type(1) .stream-grid .stream-card:nth-child(${index + 1})`);
+        if (card) {
+            // Update image if available
+            if (stream.thumbnailUrl) {
+                const img = card.querySelector('.stream-thumbnail img');
+                if (img) img.src = stream.thumbnailUrl;
+            }
+            
+            // Update title if available
+            if (stream.title) {
+                const title = card.querySelector('.stream-title');
+                if (title) title.textContent = stream.title;
+            }
+            
+            // Update avatar if available
+            if (stream.avatarUrl) {
+                const avatar = card.querySelector('.creator-avatar');
+                if (avatar) {
+                    avatar.style.backgroundImage = `url('${stream.avatarUrl}')`;
+                    avatar.style.backgroundSize = 'cover';
+                    avatar.textContent = '';
+                }
+            }
+            
+            // Update creator name if available
+            if (stream.displayName) {
+                const name = card.querySelector('.creator-name');
+                if (name) {
+                    // Keep location if it exists
+                    const location = name.textContent.includes(' - ') ? 
+                        name.textContent.substring(name.textContent.indexOf(' - ')) : '';
+                    name.textContent = stream.displayName + location;
+                }
+            }
+            
+            // Add description if available
+            if (stream.description && !card.querySelector('.stream-description')) {
+                const detailsSection = card.querySelector('.stream-details');
+                const title = detailsSection.querySelector('.stream-title');
+                if (detailsSection && title) {
+                    const description = document.createElement('p');
+                    description.className = 'stream-description';
+                    description.style.fontSize = '12px';
+                    description.style.color = 'var(--text-muted)';
+                    description.style.marginBottom = '8px';
+                    description.style.display = '-webkit-box';
+                    description.style.webkitLineClamp = '2';
+                    description.style.webkitBoxOrient = 'vertical';
+                    description.style.overflow = 'hidden';
+                    description.textContent = stream.description;
+                    detailsSection.insertBefore(description, title.nextSibling);
+                }
+            }
+        }
+    });
+    
+    // Update upcoming streams section similarly
+    const upcomingStreams = enhancedStreams.slice(0, 2);
+    upcomingStreams.forEach((stream, index) => {
+        const card = document.querySelector(`.section:nth-of-type(3) .stream-grid .stream-card:nth-child(${index + 1})`);
+        if (card) {
+            // Similar updates as above
+            if (stream.thumbnailUrl) {
+                const img = card.querySelector('.stream-thumbnail img');
+                if (img) img.src = stream.thumbnailUrl;
+            }
+            
+            if (stream.title) {
+                const title = card.querySelector('.stream-title');
+                if (title) title.textContent = stream.title;
+            }
+            
+            if (stream.avatarUrl) {
+                const avatar = card.querySelector('.creator-avatar');
+                if (avatar) {
+                    avatar.style.backgroundImage = `url('${stream.avatarUrl}')`;
+                    avatar.style.backgroundSize = 'cover';
+                    avatar.textContent = '';
+                }
+            }
+            
+            if (stream.displayName) {
+                const name = card.querySelector('.creator-name');
+                if (name) {
+                    const location = name.textContent.includes(' - ') ? 
+                        name.textContent.substring(name.textContent.indexOf(' - ')) : '';
+                    name.textContent = stream.displayName + location;
+                }
+            }
+            
+            if (stream.description && !card.querySelector('.stream-description')) {
+                const detailsSection = card.querySelector('.stream-details');
+                const title = detailsSection.querySelector('.stream-title');
+                if (detailsSection && title) {
+                    const description = document.createElement('p');
+                    description.className = 'stream-description';
+                    description.style.fontSize = '12px';
+                    description.style.color = 'var(--text-muted)';
+                    description.style.marginBottom = '8px';
+                    description.style.display = '-webkit-box';
+                    description.style.webkitLineClamp = '2';
+                    description.style.webkitBoxOrient = 'vertical';
+                    description.style.overflow = 'hidden';
+                    description.textContent = stream.description;
+                    detailsSection.insertBefore(description, title.nextSibling);
+                }
+            }
+        }
+    });
+    
+    // Update creator cards
+    enhancedStreams.forEach((stream, index) => {
+        const card = document.querySelector(`.creator-grid .creator-card:nth-child(${index + 1})`);
+        if (card) {
+            if (stream.avatarUrl) {
+                const avatar = card.querySelector('.creator-avatar-large');
+                if (avatar) {
+                    avatar.style.backgroundImage = `url('${stream.avatarUrl}')`;
+                    avatar.style.backgroundSize = 'cover';
+                    avatar.textContent = '';
+                }
+            }
+            
+            if (stream.displayName) {
+                const name = card.querySelector('.creator-name-large');
+                if (name) name.textContent = stream.displayName.split(' ')[0];
+            }
+        }
+    });
 }
 
 // Initialize event listeners for interactive elements
@@ -1789,9 +1990,11 @@ function initializeEventListeners() {
 
     // Region selector placeholder
     const regionBadge = document.querySelector('.region-badge');
-    regionBadge.addEventListener('click', () => {
-        console.log('Region selector clicked');
-    });
+    if (regionBadge) {
+        regionBadge.addEventListener('click', () => {
+            console.log('Region selector clicked');
+        });
+    }
     
     // Add hover effects to cards to indicate they're clickable
     const allCards = document.querySelectorAll('.stream-card, .creator-card');
