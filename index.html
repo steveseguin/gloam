@@ -1320,11 +1320,131 @@
 		</div>
     </footer>
 <script>
-/**
- * StageTEN Data Extractor
- * Extracts data from StageTEN channel pages and enhances stream cards 
- * with proper thumbnails, descriptions, and metadata
- */
+// Function to fetch data from the endpoint
+async function fetchStreamData() {
+    try {
+        const response = await fetch('https://stageten-gloam.vdo.workers.dev/');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to example data if API fails
+        return getFallbackData();
+    }
+}
+
+// Fallback data based on your example
+function getFallbackData() {
+    return [
+        {
+            "_metadata": {
+                "jsRuntime": "node",
+                "nodeVersion": "v20.18.3"
+            },
+            "channel": "server",
+            "context": {
+                "library": {
+                    "name": "@segment/analytics-node",
+                    "version": "2.0.0"
+                }
+            },
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "integrations": {},
+            "messageId": "node-next-1745615189110-5f164163-52ad-4058-b2c2-c1fb30098505",
+            "originalTimestamp": "2025-04-25T21:06:29.109Z",
+            "projectId": "ieWx4BBfzZwJS1mS4b88cz",
+            "properties": {
+                "affiliateCommunityMemberId": null,
+                "affiliateEmail": null,
+                "affiliateUsername": null,
+                "email": "parkermaisondatelier@gmail.com",
+                "isShopOwner": true,
+                "shopAppUrl": "https://shop.app/mini/stageten?shop_id=72737784054",
+                "shopDomain": "dsqg0k-yw.myshopify.com",
+                "shopName": "Parker Maison D'Atelier",
+                "shopUrl": "https://parkermaison.com",
+                "watchUrl": "https://play.stageten.tv/channel/4ba6b8f4-13dc-453e-bc7e-de8600c97595"
+            },
+            "timestamp": "2025-04-25T21:06:29.345Z",
+            "type": "track",
+            "userId": "dsqg0k-yw.myshopify.com"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189120-5f164163-52ad-4058-b2c2-c1fb30098506",
+            "originalTimestamp": "2025-04-25T19:06:29.109Z",
+            "properties": {
+                "email": "canadiancreative@gmail.com",
+                "shopDomain": "canadian-style.myshopify.com",
+                "shopName": "Canadian Creative Collections",
+                "shopUrl": "https://canadiancreative.com",
+                "watchUrl": "https://play.stageten.tv/channel/5ca7b9f5-24dc-463e-ac7e-ef7600d97596"
+            },
+            "timestamp": "2025-04-25T19:06:29.345Z"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189130-5f164163-52ad-4058-b2c2-c1fb30098507",
+            "originalTimestamp": "2025-04-25T20:36:29.109Z",
+            "properties": {
+                "email": "fashionforward@gmail.com",
+                "shopDomain": "fashion-forward.myshopify.com",
+                "shopName": "Fashion Forward Studio",
+                "shopUrl": "https://fashionforwardstudio.com",
+                "watchUrl": "https://play.stageten.tv/channel/6da8b9f6-35dc-473e-bd7e-fg8700e97597"
+            },
+            "timestamp": "2025-04-25T20:36:29.345Z"
+        },
+        {
+            "event": "tv.stageten.plugin-commerce.output.live",
+            "messageId": "node-next-1745615189140-5f164163-52ad-4058-b2c2-c1fb30098508",
+            "originalTimestamp": "2025-04-25T22:16:29.109Z",
+            "properties": {
+                "email": "beautyessentials@gmail.com",
+                "shopDomain": "beauty-essentials.myshopify.com",
+                "shopName": "Beauty Essentials",
+                "shopUrl": "https://beautyessentials.com",
+                "watchUrl": "https://play.stageten.tv/channel/7ea9b9f7-46dc-483e-ce7e-gh9800f97598"
+            },
+            "timestamp": "2025-04-25T22:16:29.345Z"
+        }
+    ];
+}
+
+// Process stream data
+function processStreamData(data) {
+    if (!Array.isArray(data)) {
+        console.error('Data is not an array');
+        return [];
+    }
+
+    const streams = data.filter(item => 
+        item.event === 'tv.stageten.plugin-commerce.output.live' && 
+        item.properties && 
+        item.properties.watchUrl
+    );
+
+    const currentTime = Date.now();
+    const fourHoursInMs = 4 * 60 * 60 * 1000;
+
+    return streams.map(stream => {
+        const timestamp = new Date(stream.timestamp || stream.originalTimestamp).getTime();
+        const isLive = (currentTime - timestamp) < fourHoursInMs;
+        
+        return {
+            shopName: stream.properties.shopName,
+            shopDomain: stream.properties.shopDomain,
+            shopUrl: stream.properties.shopUrl,
+            watchUrl: stream.properties.watchUrl,
+            timestamp: timestamp,
+            isLive: isLive,
+            email: stream.properties.email,
+            channelId: stream.properties.watchUrl.split('/').pop()
+        };
+    });
+}
 
 // Function to fetch and extract data from a StageTEN channel page
 async function fetchStageTENChannelData(channelUrl) {
@@ -1432,50 +1552,9 @@ async function enhanceStreamWithStageTENData(stream) {
     }
 }
 
-// Update the processStreamData function to include enhanced data
-async function processStreamDataWithDetails(data) {
-    if (!Array.isArray(data)) {
-        console.error('Data is not an array');
-        return [];
-    }
-
-    const streams = data.filter(item => 
-        item.event === 'tv.stageten.plugin-commerce.output.live' && 
-        item.properties && 
-        item.properties.watchUrl
-    );
-
-    const currentTime = Date.now();
-    const fourHoursInMs = 4 * 60 * 60 * 1000;
-
-    // First process the basic stream data
-    const basicStreams = streams.map(stream => {
-        const timestamp = new Date(stream.timestamp || stream.originalTimestamp).getTime();
-        const isLive = (currentTime - timestamp) < fourHoursInMs;
-        
-        return {
-            shopName: stream.properties.shopName,
-            shopDomain: stream.properties.shopDomain,
-            shopUrl: stream.properties.shopUrl,
-            watchUrl: stream.properties.watchUrl,
-            timestamp: timestamp,
-            isLive: isLive,
-            email: stream.properties.email,
-            channelId: stream.properties.watchUrl.split('/').pop()
-        };
-    });
-
-    // Then enhance with StageTEN data (parallel requests)
-    const enhancedStreamsPromises = basicStreams.map(stream => 
-        enhanceStreamWithStageTENData(stream)
-    );
-    
-    return Promise.all(enhancedStreamsPromises);
-}
-
-// Example function to use the data in our stream cards
-function createStreamCardWithEnhancedData(stream, index) {
-    // Randomize some data for variety if we don't have actual data
+// Generate HTML for stream cards
+function createStreamCard(stream, index) {
+    // Randomize some data for variety
     const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
     const viewerCounts = ['1.2K', '956', '2.4K', '1.8K', '3.1K', '875'];
     const discounts = ['40% OFF', 'BOGO', 'Free Shipping', '20% OFF', 'Buy 2 Get 1'];
@@ -1486,8 +1565,8 @@ function createStreamCardWithEnhancedData(stream, index) {
     
     // Determine if it's Canadian based on domain or name
     const isCanadian = stream.shopDomain.includes('ca') || 
-                        stream.shopName.toLowerCase().includes('canadian') || 
-                        index % 3 === 0;  // Make every third one Canadian for variety
+                      stream.shopName.toLowerCase().includes('canadian') || 
+                      index % 3 === 0;  // Make every third one Canadian for variety
     
     // Use enhanced data if available
     const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
@@ -1565,65 +1644,16 @@ function createStreamCardWithEnhancedData(stream, index) {
     `;
 }
 
-// Update the populateStreamData function to use enhanced data
-async function populateStreamDataWithDetails() {
-    const data = await fetchStreamData();
-    const streams = await processStreamDataWithDetails(data);
-    
-    if (streams.length === 0) {
-        console.error('No stream data available');
-        return;
-    }
-    
-    // Get the container for live streams
-    const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
-    if (liveStreamContainer) {
-        liveStreamContainer.innerHTML = ''; // Clear existing content
-        // Add the first 4 streams to the live section
-        const liveStreams = streams.slice(0, 4);
-        liveStreams.forEach((stream, index) => {
-            liveStreamContainer.innerHTML += createStreamCardWithEnhancedData(stream, index);
-        });
-    }
-    
-    // Get the container for starting soon streams
-    const upcomingStreamContainer = document.querySelector('.section:nth-of-type(3) .stream-grid');
-    if (upcomingStreamContainer) {
-        upcomingStreamContainer.innerHTML = ''; // Clear existing content
-        // Add the next 2 streams to the upcoming section
-        const upcomingStreams = streams.slice(0, 2);
-        upcomingStreams.forEach((stream, index) => {
-            // Override isLive for upcoming streams
-            const upcomingStream = {...stream, isLive: false};
-            upcomingStreamContainer.innerHTML += createStreamCardWithEnhancedData(upcomingStream, index + 4);
-        });
-    }
-    
-    // Get the container for creators
-    const creatorContainer = document.querySelector('.creator-grid');
-    if (creatorContainer) {
-        creatorContainer.innerHTML = ''; // Clear existing content
-        // Use all streams as creators
-        streams.forEach((stream, index) => {
-            creatorContainer.innerHTML += createCreatorCardWithEnhancedData(stream, index);
-        });
-    }
-    
-    // Reinitialize event listeners for the newly created elements
-    initializeEventListeners();
-}
-
-// Enhanced creator card function
-function createCreatorCardWithEnhancedData(stream, index) {
+// Generate HTML for creator cards
+function createCreatorCard(stream, index) {
     const isCanadian = stream.shopDomain.includes('ca') || 
-                        stream.shopName.toLowerCase().includes('canadian') || 
-                        index % 3 === 0;
-                        
-    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
-    
+                      stream.shopName.toLowerCase().includes('canadian') || 
+                      index % 3 === 0;
+                      
     // Use enhanced data if available
     const displayName = stream.displayName || stream.shopName;
     const avatarUrl = stream.avatarUrl;
+    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
     
     // Generate random stats
     const followers = Math.floor(Math.random() * 500) + 150 + 'K';
@@ -1669,8 +1699,129 @@ function createCreatorCardWithEnhancedData(stream, index) {
     `;
 }
 
-// Update document ready function
-document.addEventListener('DOMContentLoaded', populateStreamDataWithDetails);
-	</script>
+// Populate the stream section and creator section with enhanced data
+async function populateStreamData() {
+    const data = await fetchStreamData();
+    const basicStreams = processStreamData(data);
+    
+    if (basicStreams.length === 0) {
+        console.error('No stream data available');
+        return;
+    }
+    
+    // Enhance streams with StageTEN data (one by one to avoid too many simultaneous requests)
+    const enhancedStreams = [];
+    for (const stream of basicStreams) {
+        try {
+            const enhanced = await enhanceStreamWithStageTENData(stream);
+            enhancedStreams.push(enhanced);
+        } catch (error) {
+            console.error('Error enhancing stream:', error);
+            enhancedStreams.push(stream); // Use basic stream if enhancement fails
+        }
+    }
+    
+    // Get the container for live streams
+    const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
+    if (liveStreamContainer) {
+        liveStreamContainer.innerHTML = ''; // Clear existing content
+        // Add the first 4 streams to the live section
+        const liveStreams = enhancedStreams.slice(0, 4);
+        liveStreams.forEach((stream, index) => {
+            liveStreamContainer.innerHTML += createStreamCard(stream, index);
+        });
+    }
+    
+    // Get the container for starting soon streams
+    const upcomingStreamContainer = document.querySelector('.section:nth-of-type(3) .stream-grid');
+    if (upcomingStreamContainer) {
+        upcomingStreamContainer.innerHTML = ''; // Clear existing content
+        // Add the next 2 streams to the upcoming section
+        const upcomingStreams = enhancedStreams.slice(0, 2);
+        upcomingStreams.forEach((stream, index) => {
+            // Override isLive for upcoming streams
+            const upcomingStream = {...stream, isLive: false};
+            upcomingStreamContainer.innerHTML += createStreamCard(upcomingStream, index + 4);
+        });
+    }
+    
+    // Get the container for creators
+    const creatorContainer = document.querySelector('.creator-grid');
+    if (creatorContainer) {
+        creatorContainer.innerHTML = ''; // Clear existing content
+        // Use all streams as creators
+        enhancedStreams.forEach((stream, index) => {
+            creatorContainer.innerHTML += createCreatorCard(stream, index);
+        });
+    }
+    
+    // Reinitialize event listeners for the newly created elements
+    initializeEventListeners();
+}
+
+// Initialize event listeners for interactive elements
+function initializeEventListeners() {
+    // Niche filtering
+    const nicheButtons = document.querySelectorAll('.niche-btn');
+    const streamCards = document.querySelectorAll('.stream-card');
+
+    nicheButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            nicheButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            const selectedNiche = button.dataset.niche;
+            
+            streamCards.forEach(card => {
+                if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Follow button interaction
+    const followButtons = document.querySelectorAll('.follow-button');
+    followButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent clicking through to parent element
+            if (button.textContent === 'Follow') {
+                button.textContent = 'Following';
+                button.style.background = 'var(--success)';
+            } else {
+                button.textContent = 'Follow';
+                button.style.background = '';
+            }
+        });
+    });
+
+    // Region selector placeholder
+    const regionBadge = document.querySelector('.region-badge');
+    regionBadge.addEventListener('click', () => {
+        console.log('Region selector clicked');
+    });
+    
+    // Add hover effects to cards to indicate they're clickable
+    const allCards = document.querySelectorAll('.stream-card, .creator-card');
+    allCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)';
+            card.style.boxShadow = 'var(--shadow-lg)';
+            card.style.borderColor = 'var(--primary-light)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+            card.style.boxShadow = '';
+            card.style.borderColor = '';
+        });
+    });
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', populateStreamData);
+</script>
 </body>
 </html>
