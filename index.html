@@ -1323,21 +1323,18 @@
 // Function to fetch data from the endpoint
 async function fetchStreamData() {
     try {
-        // Setting mode to 'no-cors' to handle CORS restrictions
-        // Since we can't modify headers on remote servers
-        const response = await fetch('https://young-grass-8d02.vdo.workers.dev/', {
-            mode: 'no-cors'
-        }).catch(() => null);
-        
-        // If we couldn't fetch (which will happen with no-cors), fall back to local data
-        // With no-cors, we can't actually read the response content
-        return getFallbackData();
+        const response = await fetch('https://stageten-gloam.vdo.workers.dev/');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
     } catch (error) {
         console.error('Error fetching data:', error);
-        // Always use fallback data since no-cors won't let us parse the response
+        // Fallback to example data if API fails
         return getFallbackData();
     }
 }
+
 // Fallback data based on your example
 function getFallbackData() {
     return [
@@ -1452,64 +1449,77 @@ function processStreamData(data) {
 // Function to fetch and extract data from a StageTEN channel page
 async function fetchStageTENChannelData(channelUrl) {
     try {
-        // Attempt fetch with no-cors
-        await fetch(channelUrl, { mode: 'no-cors' }).catch(() => null);
+        // Fetch the page content
+        const response = await fetch(channelUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch page: ${response.status}`);
+        }
         
-        // We'll always need to construct synthetic data from what we know
-        // Extract channel ID from the URL for consistency
-        const channelId = channelUrl.split('/').pop();
+        const html = await response.text();
         
-        // Create synthetic channel data based on our existing info
-        return createSyntheticChannelData(channelId);
+        // Extract the JSON data from the __NEXT_DATA__ script tag
+        const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+        if (!nextDataMatch || !nextDataMatch[1]) {
+            throw new Error('Could not find __NEXT_DATA__ in the page');
+        }
+        
+        // Parse the JSON data
+        const nextData = JSON.parse(nextDataMatch[1]);
+        
+        // Extract relevant channel data
+        const channelData = extractChannelData(nextData);
+        
+        return channelData;
     } catch (error) {
         console.error('Error fetching StageTEN channel data:', error);
         return null;
     }
 }
-// Helper function to create synthetic channel data
-function createSyntheticChannelData(channelId) {
-    // Find the stream data that matches this channel ID
-    const matchingStream = getFallbackData().find(s => 
-        s.properties && s.properties.watchUrl && 
-        s.properties.watchUrl.includes(channelId)
-    );
-    
-    if (!matchingStream) return null;
-    
-    // Create synthetic data based on what we have
-    return {
-        id: channelId,
-        title: matchingStream.properties.shopName + " Live",
-        description: `Live shopping experience from ${matchingStream.properties.shopName}`,
-        slug: channelId,
-        isLive: true,
-        splashImageUrl: null,
-        user: {
-            id: matchingStream.userId || channelId,
-            username: matchingStream.properties.email ? matchingStream.properties.email.split('@')[0] : 'shop',
-            displayName: matchingStream.properties.shopName,
-            avatarUrl: null,
-            links: []
-        }
-    };
-}
+
+// Extract relevant channel data from the Next.js data
 function extractChannelData(nextData) {
     try {
-        // Since we can't actually get nextData with CORS restrictions,
-        // We'll create a simplified structure that matches what we need
+        const apolloState = nextData.props.pageProps.__APOLLO_STATE__;
+        
+        // Find the Channel object
+        const channelKey = Object.keys(apolloState).find(key => 
+            key.startsWith('Channel:') && apolloState[key].__typename === 'Channel'
+        );
+        
+        if (!channelKey) {
+            throw new Error('Could not find Channel data');
+        }
+        
+        const channel = apolloState[channelKey];
+        
+        // Find the User object
+        const userRef = channel.user.__ref;
+        const user = apolloState[userRef];
+        
+        // Extract user links
+        const userLinks = user.userLinks.map(linkRef => {
+            const link = apolloState[linkRef.__ref];
+            return {
+                title: link.title,
+                url: link.link,
+                logo: link.logo
+            };
+        });
+        
+        // Build the result object
         return {
-            id: "channel-id",
-            title: "Live Shopping Channel",
-            description: "Live shopping experience",
-            slug: "channel-slug",
-            isLive: true,
-            splashImageUrl: null,
+            id: channel.id,
+            title: channel.title,
+            description: channel.description,
+            slug: channel.slug,
+            isLive: channel.live,
+            splashImageUrl: channel.splashImageUrl,
             user: {
-                id: "user-id",
-                username: "username",
-                displayName: "Store Name",
-                avatarUrl: null,
-                links: []
+                id: user.id,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                links: userLinks
             }
         };
     } catch (error) {
@@ -1541,6 +1551,8 @@ async function enhanceStreamWithStageTENData(stream) {
         return stream;
     }
 }
+
+// Generate HTML for stream cards
 function createStreamCard(stream, index) {
     // Randomize some data for variety
     const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
@@ -1552,47 +1564,41 @@ function createStreamCard(stream, index) {
     const discount = discounts[index % discounts.length];
     
     // Determine if it's Canadian based on domain or name
-    const isCanadian = stream.shopDomain?.includes('ca') || 
-                      stream.shopName?.toLowerCase().includes('canadian') || 
+    const isCanadian = stream.shopDomain.includes('ca') || 
+                      stream.shopName.toLowerCase().includes('canadian') || 
                       index % 3 === 0;  // Make every third one Canadian for variety
     
-    // Use stream data if available, otherwise create sensible defaults
-    const shopName = stream.shopName || `Fashion Shop ${index + 1}`;
-    const title = stream.title || `${shopName} - Live Shopping Experience`;
+    // Use enhanced data if available
+    const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
     const description = stream.description || '';
-    
-    // Always use local images to avoid CORS issues with remote images
-    const thumbnailIndex = (index % 4) + 1;
-    const thumbnailUrl = `cover${thumbnailIndex}.png`;
+    const thumbnailUrl = stream.thumbnailUrl || `cover${(index % 4) + 1}.png`;
+    const avatarUrl = stream.avatarUrl;
+    const displayName = stream.displayName || stream.shopName;
     
     // First letter of shop name for avatar
-    const avatarInitials = (shopName.charAt(0) + (shopName.split(' ')[1] ? shopName.split(' ')[1].charAt(0) : '')).toUpperCase();
+    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
     
     // Generate random location for Canadian creators
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
     const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
-    const shopUrl = stream.shopUrl || '#';
-    const watchUrl = stream.watchUrl || '#';
-    const isLive = stream.isLive !== undefined ? stream.isLive : (index % 3 === 0); // Every third is live by default
-    
     return `
-    <div class="stream-card" data-niche="${category.toLowerCase()}" onclick="window.open('${watchUrl}', '_blank')" style="cursor: pointer;">
+    <div class="stream-card" data-niche="${category.toLowerCase()}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="stream-thumbnail">
-            <img src="${thumbnailUrl}" alt="${shopName}">
-            ${isLive ? `
+            <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='cover${(index % 4) + 1}.png'">
+            ${stream.isLive ? `
             <div class="live-indicator">
                 <span class="live-dot"></span>
                 LIVE
             </div>` : ''}
             ${isCanadian ? `<div class="canadian-badge">Canadian Made</div>` : ''}
-            <div class="promotion-badge">${isLive ? discount : 'Starts in 30m'}</div>
+            <div class="promotion-badge">${stream.isLive ? discount : 'Starts in 30m'}</div>
             <div class="viewer-count">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                ${isLive ? `${viewerCount} watching` : 'Set reminder'}
+                ${stream.isLive ? `${viewerCount} watching` : 'Set reminder'}
             </div>
             <div class="products-preview">
                 <div class="product-thumbnails">
@@ -1614,17 +1620,20 @@ function createStreamCard(stream, index) {
             <h3 class="stream-title">${title}</h3>
             ${description ? `<p class="stream-description" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${description}</p>` : ''}
             <div class="creator-info">
-                <div class="creator-avatar">${avatarInitials}</div>
-                <span class="creator-name">${shopName}${location}</span>
+                ${avatarUrl ? 
+                    `<div class="creator-avatar" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` : 
+                    `<div class="creator-avatar">${avatarInitials}</div>`
+                }
+                <span class="creator-name">${displayName}${location}</span>
             </div>
             <div class="stream-footer">
                 <span class="category-tag">${category}</span>
                 <div class="action-links" style="display:flex; gap:10px;">
-                    <a href="${watchUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
-                        ${isLive ? 'Watch Live →' : 'Set Reminder →'}
+                    <a href="${stream.watchUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
+                        ${stream.isLive ? 'Watch Live →' : 'Set Reminder →'}
                     </a>
-                    ${shopUrl && shopUrl !== '#' ? `
-                    <a href="${shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
+                    ${stream.shopUrl ? `
+                    <a href="${stream.shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
                         Shop →
                     </a>
                     ` : ''}
@@ -1689,30 +1698,28 @@ function createCreatorCard(stream, index) {
     </div>
     `;
 }
+
+// Populate the stream section and creator section with enhanced data
 async function populateStreamData() {
     const data = await fetchStreamData();
     const basicStreams = processStreamData(data);
     
-    // Always ensure we have at least some streams to display
-    let streamsToUse = basicStreams;
-    if (streamsToUse.length === 0) {
-        console.log('No stream data available, using fallback data');
-        streamsToUse = processStreamData(getFallbackData());
+    if (basicStreams.length === 0) {
+        console.error('No stream data available');
+        return;
     }
     
-    // Don't try to enhance streams with remote data - we know it will fail
-    // Instead, use the data we have and enhance it locally
-    const enhancedStreams = streamsToUse.map((stream, index) => {
-        // Create a local enhancement with the data we have
-        return {
-            ...stream,
-            title: stream.shopName ? `${stream.shopName} - Live Shopping` : `Fashion & Beauty Live ${index + 1}`,
-            description: stream.shopName ? `Discover amazing products from ${stream.shopName}` : 'Live shopping experience with exclusive deals and products',
-            thumbnailUrl: `cover${(index % 4) + 1}.png`,
-            avatarUrl: null,
-            displayName: stream.shopName || `Fashion Shop ${index + 1}`
-        };
-    });
+    // Enhance streams with StageTEN data (one by one to avoid too many simultaneous requests)
+    const enhancedStreams = [];
+    for (const stream of basicStreams) {
+        try {
+            const enhanced = await enhanceStreamWithStageTENData(stream);
+            enhancedStreams.push(enhanced);
+        } catch (error) {
+            console.error('Error enhancing stream:', error);
+            enhancedStreams.push(stream); // Use basic stream if enhancement fails
+        }
+    }
     
     // Get the container for live streams
     const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
