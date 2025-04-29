@@ -81,6 +81,25 @@
             gap: 12px;
         }
 
+ .stream-status {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-live {
+    background: var(--danger);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
         .logo-text {
             font-size: 24px;
             font-weight: 800;
@@ -1440,53 +1459,134 @@ function processStreamData(data) {
 
     const currentTime = Date.now();
     const fourHoursInMs = 4 * 60 * 60 * 1000;
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
 
     return streams.map(stream => {
         // Handle both data formats
         const properties = stream.properties || stream;
-        const timestamp = stream.timestamp || (new Date(stream.timestamp || stream.originalTimestamp).getTime());
-        const isLive = stream.isLive !== undefined ? stream.isLive : ((currentTime - timestamp) < fourHoursInMs);
+        
+        // Ensure we have a proper timestamp
+        let timestamp;
+        if (typeof stream.timestamp === 'number') {
+            timestamp = stream.timestamp;
+        } else if (stream.timestamp) {
+            timestamp = new Date(stream.timestamp).getTime();
+        } else if (stream.originalTimestamp) {
+            timestamp = new Date(stream.originalTimestamp).getTime();
+        } else {
+            timestamp = currentTime - Math.floor(Math.random() * fourHoursInMs); // Fallback
+        }
+        
+        // Calculate stream status
+        const timeDiff = currentTime - timestamp;
+        let streamStatus = 'live';
+        if (timeDiff > fourHoursInMs) {
+            streamStatus = 'ended';
+        } else if (timeDiff < 0) {
+            streamStatus = 'upcoming';
+        }
+        
+        // If isLive is explicitly set, honor that
+        if (stream.isLive === true) {
+            streamStatus = 'live';
+        } else if (stream.isLive === false && streamStatus === 'live') {
+            streamStatus = 'ended';
+        }
+        
+        // If outside 24 hour window, filter out
+        if (Math.abs(timeDiff) > twentyFourHoursInMs) {
+            streamStatus = 'filtered';
+        }
         
         return {
-            shopName: properties.shopName || stream.shopName,
-            shopDomain: properties.shopDomain || stream.shopDomain,
-            shopUrl: properties.shopUrl || stream.shopUrl,
-            watchUrl: properties.watchUrl || stream.watchUrl,
+            shopName: properties.shopName || stream.shopName || "Stage TEN Shop",
+            shopDomain: properties.shopDomain || stream.shopDomain || "",
+            shopUrl: properties.shopUrl || stream.shopUrl || "",
+            watchUrl: properties.watchUrl || stream.watchUrl || "",
             timestamp: timestamp,
-            isLive: isLive,
-            email: properties.email || stream.email,
+            streamStatus: streamStatus,
+            timeAgo: formatTimeAgo(timestamp),
+            startTime: formatStartTime(timestamp),
+            email: properties.email || stream.email || "",
             channelId: stream.channelId || (properties.watchUrl ? properties.watchUrl.split('/').pop() : null),
+            isCanadian: (properties.shopDomain || stream.shopDomain || "").includes('.ca') ||
+                       (properties.shopName || stream.shopName || "").toLowerCase().includes('canadian') ||
+                       (properties.email || stream.email || "").toLowerCase().includes('.ca'),
             // Copy existing enhanced data if available
-            title: stream.title,
-            description: stream.description,
+            title: stream.title || properties.title,
+            description: stream.description || properties.description,
             thumbnailUrl: stream.thumbnailUrl,
             avatarUrl: stream.avatarUrl,
             displayName: stream.displayName,
-            channelData: stream.channelData
+            channelData: stream.channelData,
+            products: stream.products || []
         };
-    });
+    }).filter(stream => stream.streamStatus !== 'filtered');
 }
 
+	function formatTimeAgo(timestamp) {
+    const now = Date.now();
+    const diffInSeconds = Math.floor((now - timestamp) / 1000);
+    
+    if (diffInSeconds < 0) {
+        // Upcoming stream
+        const absDiff = Math.abs(diffInSeconds);
+        if (absDiff < 60) return 'Starting soon';
+        if (absDiff < 3600) return `Starts in ${Math.floor(absDiff / 60)}m`;
+        if (absDiff < 86400) return `Starts in ${Math.floor(absDiff / 3600)}h`;
+        return `Starts on ${new Date(timestamp).toLocaleDateString()}`;
+    }
+    
+    // Past stream
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 14400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 86400) return 'Recent';
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+}
+
+// Format start time for display
+function formatStartTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.getDate() === now.getDate() && 
+                   date.getMonth() === now.getMonth() && 
+                   date.getFullYear() === now.getFullYear();
+    
+    let formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    if (isToday) {
+        return `Today at ${formattedTime}`;
+    } else {
+        // Get day name
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = days[date.getDay()];
+        return `${dayName} at ${formattedTime}`;
+    }
+}
 // Function to fetch and extract data from a StageTEN channel page
-async function fetchStageTENChannelData(channelUrl) {
+async function fetchStageTENChannelData(channelId) {
     try {
-        // This is a mock function since we can't actually fetch the page content in this context
-        // In a real environment, we'd fetch the page and extract the data
-        console.log(`Would fetch data from ${channelUrl}`);
+        if (!channelId) return null;
         
-        // Return dummy data for now
-        return {
-            id: channelUrl.split('/').pop(),
-            title: "Live Shopping Experience",
-            description: "Join us for exclusive deals and product showcases!",
-            isLive: Math.random() > 0.5,
-            splashImageUrl: `https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`,
-            user: {
-                displayName: "Creator Name",
-                avatarUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`,
-                links: []
+        // Try to fetch from the StageTEN API
+        const response = await fetch(`https://api.stageten.tv/v1/channels/${channelId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
             }
-        };
+        });
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.log(`Channel ${channelId} not found`);
+                return null;
+            }
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
     } catch (error) {
         console.error('Error fetching StageTEN channel data:', error);
         return null;
@@ -1498,38 +1598,87 @@ async function enhanceStreamWithStageTENData(stream) {
     if (!stream.watchUrl) return stream;
     
     try {
-        // If we already have channelData, use it
-        if (stream.channelData && !stream.channelData.error) {
+        // If we already have complete channelData, use it
+        if (stream.channelData && stream.channelData.id && stream.channelData.user) {
             return {
                 ...stream,
                 title: stream.channelData.title || stream.title || stream.shopName,
                 description: stream.channelData.description || stream.description || '',
                 thumbnailUrl: stream.channelData.splashImageUrl || stream.thumbnailUrl || '',
                 avatarUrl: stream.channelData.user?.avatarUrl || stream.avatarUrl || '',
-                displayName: stream.channelData.user?.displayName || stream.displayName || stream.shopName
+                displayName: stream.channelData.user?.displayName || stream.displayName || stream.shopName,
+                socialLinks: stream.channelData.user?.links || []
             };
         }
         
-        // Otherwise fetch new data
-        const channelData = await fetchStageTENChannelData(stream.watchUrl);
+        // Extract channel ID from watchUrl if not already available
+        const channelId = stream.channelId || stream.watchUrl.split('/').pop();
         
-        if (!channelData) return stream;
+        if (!channelId) return stream;
         
+        // Fetch channel data from API
+        const channelData = await fetchStageTENChannelData(channelId);
+        
+        if (!channelData) {
+            // Generate placeholder data if API fails
+            return {
+                ...stream,
+                title: stream.title || `${stream.shopName} - Live Shopping Experience`,
+                description: stream.description || 'Join us for exclusive deals and product showcases!',
+                thumbnailUrl: stream.thumbnailUrl || `https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`,
+                avatarUrl: stream.avatarUrl,
+                displayName: stream.displayName || stream.shopName
+            };
+        }
+        
+        // Fetch products if available via Shopify API
+        let products = [];
+        try {
+            if (stream.shopDomain && stream.shopDomain.includes('myshopify.com')) {
+                // This would be the place to integrate with Shopify if we had API credentials
+                // Since we don't, we'll use placeholder products for now
+                products = [
+                    {
+                        id: `product-${channelId}-1`,
+                        title: 'Featured Product 1',
+                        price: '$' + (Math.floor(Math.random() * 100) + 20),
+                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`
+                    },
+                    {
+                        id: `product-${channelId}-2`,
+                        title: 'Featured Product 2',
+                        price: '$' + (Math.floor(Math.random() * 100) + 20),
+                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 1}`
+                    },
+                    {
+                        id: `product-${channelId}-3`,
+                        title: 'Featured Product 3',
+                        price: '$' + (Math.floor(Math.random() * 100) + 20),
+                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 2}`
+                    }
+                ];
+            }
+        } catch (error) {
+            console.error('Error fetching Shopify products:', error);
+        }
+        
+        // Return the enhanced stream data
         return {
             ...stream,
             channelData: channelData,
-            title: channelData.title || stream.shopName,
-            description: channelData.description || '',
-            thumbnailUrl: channelData.splashImageUrl || '',
-            avatarUrl: channelData.user?.avatarUrl || '',
-            displayName: channelData.user?.displayName || stream.shopName
+            title: channelData.title || stream.title || stream.shopName,
+            description: channelData.description || stream.description || '',
+            thumbnailUrl: channelData.splashImageUrl || stream.thumbnailUrl || '',
+            avatarUrl: channelData.user?.avatarUrl || stream.avatarUrl || '',
+            displayName: channelData.user?.displayName || stream.displayName || stream.shopName,
+            socialLinks: channelData.user?.links || [],
+            products: products
         };
     } catch (error) {
         console.error('Error enhancing stream with StageTEN data:', error);
         return stream;
     }
 }
-
 // Generate HTML for stream cards
 function createStreamCard(stream, index) {
     // Randomize some data for variety
@@ -1541,58 +1690,101 @@ function createStreamCard(stream, index) {
     const viewerCount = viewerCounts[index % viewerCounts.length];
     const discount = discounts[index % discounts.length];
     
-    // Determine if it's Canadian based on domain or name
-    const isCanadian = stream.shopDomain.includes('ca') || 
-                      stream.shopName.toLowerCase().includes('canadian') || 
-                      index % 3 === 0;  // Make every third one Canadian for variety
+    // Determine if it's Canadian based on domain, name or email
+    const isCanadian = stream.isCanadian || index % 3 === 0;
     
-    // Use the enhanced data we now have
+    // Use the enhanced data
     const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
     const description = stream.description || '';
     
-    // Use placeholder URLs that work
+    // Use good URLs from the API if available
     const thumbnailUrl = stream.thumbnailUrl || `https://picsum.photos/800/400?random=${index}`;
     const avatarUrl = stream.avatarUrl;
     const displayName = stream.displayName || stream.shopName;
     
-    // First letter of shop name for avatar
+    // First letter of shop name for avatar fallback
     const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
     
     // Generate random location for Canadian creators
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
     const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
+    // Status badge based on stream status
+    let statusBadge = '';
+    let viewerDisplay = '';
+    
+    if (stream.streamStatus === 'live') {
+        statusBadge = `
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            LIVE
+        </div>`;
+        viewerDisplay = `${viewerCount} watching`;
+    } else if (stream.streamStatus === 'ended') {
+        statusBadge = `
+        <div class="live-indicator" style="background: var(--text-muted);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M5 3l14 9-14 9V3z"></path>
+            </svg>
+            REPLAY
+        </div>`;
+        viewerDisplay = stream.timeAgo;
+    } else {
+        statusBadge = `
+        <div class="live-indicator" style="background: var(--primary);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="6" x2="12" y2="12"></line>
+                <line x1="12" y1="12" x2="16" y2="16"></line>
+            </svg>
+            SOON
+        </div>`;
+        viewerDisplay = stream.startTime;
+    }
+    
+    // Product thumbnails with zoom capability
+    const productsHtml = stream.products && stream.products.length > 0 ? 
+        stream.products.map((product, pIndex) => `
+            <div class="product-thumb" data-product-id="${product.id}">
+                <img src="${product.imageUrl}" alt="${product.title}" 
+                    onclick="showProductZoom('${product.imageUrl}', '${product.title}', '${product.price}')">
+                ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+            </div>
+        `).join('') : 
+        `
+        <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product" 
+                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 1}', 'Featured Product', '$${Math.floor(Math.random() * 100) + 20}')">
+            ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+        </div>
+        <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 2}" alt="Product"
+                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 2}', 'Trending Item', '$${Math.floor(Math.random() * 100) + 20}')">
+        </div>
+        <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 3}" alt="Product"
+                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 3}', 'New Arrival', '$${Math.floor(Math.random() * 100) + 20}')">
+            ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+        </div>
+        `;
+    
     return `
     <div class="stream-card" data-niche="${category.toLowerCase()}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="stream-thumbnail">
             <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
-            ${stream.isLive ? `
-            <div class="live-indicator">
-                <span class="live-dot"></span>
-                LIVE
-            </div>` : ''}
+            ${statusBadge}
             ${isCanadian ? `<div class="canadian-badge">Canadian Made</div>` : ''}
-            <div class="promotion-badge">${stream.isLive ? discount : 'Starts in 30m'}</div>
+            <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' ? 'Watch Replay' : stream.timeAgo)}</div>
             <div class="viewer-count">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                ${stream.isLive ? `${viewerCount} watching` : 'Set reminder'}
+                ${viewerDisplay}
             </div>
             <div class="products-preview">
                 <div class="product-thumbnails">
-                    <div class="product-thumb">
-                        <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product">
-                        ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
-                    </div>
-                    <div class="product-thumb">
-                        <img src="https://picsum.photos/100/100?random=${index * 3 + 2}" alt="Product">
-                    </div>
-                    <div class="product-thumb">
-                        <img src="https://picsum.photos/100/100?random=${index * 3 + 3}" alt="Product">
-                        ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
-                    </div>
+                    ${productsHtml}
                 </div>
             </div>
         </div>
@@ -1610,7 +1802,7 @@ function createStreamCard(stream, index) {
                 <span class="category-tag">${category}</span>
                 <div class="action-links" style="display:flex; gap:10px;">
                     <a href="${stream.watchUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
-                        ${stream.isLive ? 'Watch Live →' : 'Set Reminder →'}
+                        ${stream.streamStatus === 'live' ? 'Watch Live →' : (stream.streamStatus === 'ended' ? 'Watch Replay →' : 'Set Reminder →')}
                     </a>
                     ${stream.shopUrl ? `
                     <a href="${stream.shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
@@ -1626,9 +1818,7 @@ function createStreamCard(stream, index) {
 
 // Generate HTML for creator cards
 function createCreatorCard(stream, index) {
-    const isCanadian = stream.shopDomain.includes('ca') || 
-                      stream.shopName.toLowerCase().includes('canadian') || 
-                      index % 3 === 0;
+    const isCanadian = stream.isCanadian || index % 3 === 0;
                       
     // Use the enhanced data
     const displayName = stream.displayName || stream.shopName;
@@ -1646,6 +1836,19 @@ function createCreatorCard(stream, index) {
     // Generate random location for Canadian creators
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
     const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    
+    // Generate social links if available
+    let socialLinksHtml = '';
+    if (stream.socialLinks && stream.socialLinks.length > 0) {
+        socialLinksHtml = `
+        <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
+            ${stream.socialLinks.map(link => `
+                <a href="${link.url}" target="_blank" onclick="event.stopPropagation();" style="color: var(--primary); font-size: 12px;">
+                    ${link.title}
+                </a>
+            `).join('')}
+        </div>`;
+    }
     
     return `
     <div class="creator-card" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
@@ -1669,6 +1872,7 @@ function createCreatorCard(stream, index) {
                 <span class="creator-stat-label">Live Shows</span>
             </div>
         </div>
+        ${socialLinksHtml}
         <div style="display: flex; gap: 8px; margin-top: 16px;">
             <button class="follow-button" onclick="event.stopPropagation();">Follow</button>
             ${stream.shopUrl ? `
@@ -1827,6 +2031,125 @@ async function populateStreamData() {
     
     // Now try to enhance the data with additional details
     enhanceStreamDetails(streams);
+}
+
+	function addProductZoomModal() {
+    // Add the modal HTML to the page
+    const modalHtml = `
+    <div id="product-zoom-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center;">
+        <div style="position: relative; max-width: 90%; max-height: 90%; background: white; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg);">
+            <button onclick="closeProductZoom()" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.5); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; z-index: 10;">×</button>
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <div id="zoom-image-container" style="flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;">
+                    <img id="zoom-image" src="" alt="Product" style="max-width: 100%; max-height: 70vh; object-fit: contain; transition: transform 0.3s ease;">
+                </div>
+                <div style="padding: 16px; background: white;">
+                    <h3 id="zoom-title" style="font-size: 18px; margin-bottom: 8px;"></h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="zoom-price" style="font-size: 24px; font-weight: 600; color: var(--primary);"></span>
+                        <button style="background: var(--gradient-primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Add the modal to the page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Add the zoom functionality
+    const zoomContainer = document.getElementById('zoom-image-container');
+    const zoomImage = document.getElementById('zoom-image');
+    
+    if (zoomContainer && zoomImage) {
+        let isZoomed = false;
+        let startX = 0, startY = 0;
+        let translateX = 0, translateY = 0;
+        
+        zoomContainer.addEventListener('click', function(e) {
+            if (e.target === zoomImage) {
+                if (!isZoomed) {
+                    zoomImage.style.transform = 'scale(2)';
+                    isZoomed = true;
+                } else {
+                    zoomImage.style.transform = 'scale(1)';
+                    zoomImage.style.transformOrigin = 'center';
+                    isZoomed = false;
+                    translateX = 0;
+                    translateY = 0;
+                }
+            }
+        });
+        
+        zoomContainer.addEventListener('mousemove', function(e) {
+            if (isZoomed) {
+                const rect = zoomContainer.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                zoomImage.style.transformOrigin = `${x}% ${y}%`;
+            }
+        });
+        
+        // Add touch support for mobile
+        zoomContainer.addEventListener('touchstart', function(e) {
+            if (isZoomed) {
+                const touch = e.touches[0];
+                startX = touch.clientX - translateX;
+                startY = touch.clientY - translateY;
+                e.preventDefault();
+            }
+        });
+        
+        zoomContainer.addEventListener('touchmove', function(e) {
+            if (isZoomed) {
+                const touch = e.touches[0];
+                translateX = touch.clientX - startX;
+                translateY = touch.clientY - startY;
+                zoomImage.style.transform = `scale(2) translate(${translateX / 2}px, ${translateY / 2}px)`;
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Add the global functions
+    window.showProductZoom = function(imageUrl, title, price) {
+        const modal = document.getElementById('product-zoom-modal');
+        const zoomImage = document.getElementById('zoom-image');
+        const zoomTitle = document.getElementById('zoom-title');
+        const zoomPrice = document.getElementById('zoom-price');
+        
+        if (modal && zoomImage && zoomTitle && zoomPrice) {
+            zoomImage.src = imageUrl;
+            zoomTitle.textContent = title;
+            zoomPrice.textContent = price;
+            
+            // Reset zoom state
+            zoomImage.style.transform = 'scale(1)';
+            zoomImage.style.transformOrigin = 'center';
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            
+            // Stop propagation
+            event.stopPropagation();
+        }
+    };
+    
+    window.closeProductZoom = function() {
+        const modal = document.getElementById('product-zoom-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    };
+    
+    // Close modal when clicking outside the image
+    document.getElementById('product-zoom-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeProductZoom();
+        }
+    });
 }
 
 // Fix the hero banner image
@@ -2069,6 +2392,7 @@ function initializeEventListeners() {
 
 // Call this function when the page loads
 document.addEventListener('DOMContentLoaded', populateStreamData);
+document.addEventListener('DOMContentLoaded', addProductZoomModal);
 </script>
 </body>
 </html>
