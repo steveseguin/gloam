@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gloam! - Live Shopping Discovery</title>
+	<link href="./NotoColorEmoji.ttf" as="font" type="font/ttf" crossorigin="anonymous" />
 	<link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAt1BMVEVMaXG5eNC9dsbbZ4bJb6ztXV7yW1PfZX+ghvbLb6iKkv9xof+8ebDhY3iwfOS/dcSmgfl7m/+Yiv+Lkv+ogPShhPzNbqRopv+3edX5V0P4V0X8Vj7ZZ4rRa5ungfd7mv9opv/9VTvVaZK/dcPFcrWqgOfxW1bXaI76V0PSa5jPbaG3edWFlf+pgPOwfeSsfuyze97nYGvgZHvzWlCbiP/tXV2Rjv90n/96m/+kg/1to//Dc7nbZ4X85c2aAAAAJ3RSTlMAYPyf/WCZICBjn78Qqr97n49gYI+vn2ifeL+/j7+fgO/vv7+/YLop9DGbAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAYtJREFUeNpt0+l2gjAQBeBxYd9EEcWl1uUcFWjrgoDL+z9XZxKEhJZfwndNbgIBALCj+XymaiBc2mKzXBo2v1HWB7quauOL/f4Yx/2+wfzA/dokepU/nx0cf/32201te7drQ0Q8i1T029lpPPR26IkHc3KaCf18djTNYU6zb7tJ4rJAxLqgXy6vV+3gJcnJhVndX2k5TJPTtwsq9VN4QvYO+k8AGuvPExrrF2qNf+kAvL8CrYt7QD9V1l/5zwf8RmX9pXehiw7gUP+eGJhKjgnqLwbIx+LbpfWJAfS7LgVwfWIAXQrQ/ksB9EyYgvbnGIqBwT3LMlPyWF4mep6bohvyRg3R89R8f39/HBPoaerjAgTX+f7w+iP0tNRxgNr5/mP/4TtRlj5s0EPZsyphlmVhwfIY972W5/mInqzKggL4fe9qH+v6mPWnhFUUDwsM+v633pT5BxuZ9TdX5I8J2Ox8JI1jgvUvyT/xeBptZwnuOADNXnnQ7JJf/X/Cb23Pdd1Al96Fb1nWhI7/L7xtUk8YfKluAAAAAElFTkSuQmCC" />
     <style>
         :root {
@@ -26,7 +27,13 @@
             --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             --gradient-hover: linear-gradient(135deg, var(--primary-dark) 0%, var(--accent-dark) 100%);
         }
-
+		
+		@font-face {
+			font-family: NotoColorEmojiLimited;
+			unicode-range: U+1F1E6-1F1FF;
+			src: url(./NotoColorEmoji.ttf);
+			font-display: swap;
+		}
         * {
             margin: 0;
             padding: 0;
@@ -34,7 +41,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: "NotoColorEmojiLimited", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--background);
             color: var(--text);
             line-height: 1.6;
@@ -150,7 +157,72 @@
             color: white;
             transition: all 0.2s ease;
         }
-
+#country-dropdown {
+    border: 1px solid var(--border);
+    transform-origin: top left;
+    animation: dropdownFadeIn 0.2s ease-out;
+  }
+  
+  @keyframes dropdownFadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(-10px) scale(0.95); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0) scale(1); 
+    }
+  }
+  
+  .country-option {
+    transition: all 0.2s ease;
+  }
+  
+  .country-option:hover {
+    background: var(--background) !important;
+  }
+  
+  .region-badge {
+    position: relative;
+  }
+  
+  /* Mobile-specific styles */
+  @media (max-width: 768px) {
+    #country-dropdown {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: 90% !important;
+      max-width: 350px !important;
+      max-height: 80vh !important;
+      z-index: 1000 !important;
+      animation: dropdownFadeInMobile 0.3s ease-out !important;
+    }
+    
+    @keyframes dropdownFadeInMobile {
+      from { 
+        opacity: 0; 
+        transform: translate(-50%, -45%) scale(0.95); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1); 
+      }
+    }
+    
+    /* Add overlay for mobile */
+    body.dropdown-active::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+  }
         .search-button:hover {
             background: var(--gradient-hover);
         }
@@ -1295,7 +1367,7 @@
                     <p style="font-size: 14px; opacity: 0.8;">Growing community</p>
                 </div>
             </div>
-            <button style="background: white; color: var(--primary); border: none; padding: 16px 32px; border-radius: 8px; font-size: 18px; font-weight: 600; margin-top: 48px; cursor: pointer;">Apply Now - Limited Spots</button>
+            <button style="background: white; color: var(--primary); border: none; padding: 16px 32px; border-radius: 8px; font-size: 18px; font-weight: 600; margin-top: 48px; cursor: pointer;" onclick="window.open('https://stageten.tv/creators');">Apply Now - Limited Spots</button>
         </section>
     </main>
 
@@ -1304,7 +1376,7 @@
             <div>
                 <h4 style="font-weight: 600; margin-bottom: 16px;">For Creators</h4>
                 <ul style="list-style: none; padding: 0;">
-                    <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Apply to Host</a></li>
+                    <li style="margin-bottom: 8px;"><a href="https://stageten.tv/creators" style="color: var(--text-muted); text-decoration: none;" >Apply to Host</a></li>
                     <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Creator Resources</a></li>
                     <li style="margin-bottom: 8px;"><a href="#" style="color: var(--text-muted); text-decoration: none;">Success Stories</a></li>
                 </ul>
@@ -1986,17 +2058,24 @@ const SUPPORTED_COUNTRIES = [
   { code: "SG", name: "Singapore", emoji: "🇸🇬" },
   { code: "GLOBAL", name: "Global", emoji: "🌎" }
 ];
-
+function addCSS(css) {
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+}
 function createCountryDropdown() {
+  // Remove any existing dropdown to avoid duplicates
   const existingDropdown = document.getElementById('country-dropdown');
-  if (existingDropdown) return;
+  if (existingDropdown) {
+    existingDropdown.remove();
+  }
 
   // Create dropdown element
   const dropdown = document.createElement('div');
   dropdown.id = 'country-dropdown';
   dropdown.style.position = 'absolute';
-  dropdown.style.top = '72px';
-  dropdown.style.right = '24px';
+  dropdown.style.top = '72px'; // Default position if region badge not found
+  dropdown.style.left = 'auto';
   dropdown.style.background = 'var(--surface)';
   dropdown.style.borderRadius = '12px';
   dropdown.style.boxShadow = 'var(--shadow-lg)';
@@ -2059,6 +2138,20 @@ function createCountryDropdown() {
 
   // Add dropdown to DOM
   document.body.appendChild(dropdown);
+}
+function setupRegionBadgeHandler() {
+  // Remove existing listener by cloning and replacing
+  const regionBadge = document.querySelector('.region-badge');
+  if (regionBadge) {
+    const newRegionBadge = regionBadge.cloneNode(true);
+    regionBadge.parentNode.replaceChild(newRegionBadge, regionBadge);
+    
+    // Add the click event
+    newRegionBadge.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+  }
   
   // Close dropdown when clicking outside
   document.addEventListener('click', (e) => {
@@ -2068,22 +2161,38 @@ function createCountryDropdown() {
     if (!isDropdown && !isRegionBadge) {
       toggleDropdown(false);
     }
-  });
+  }, { once: false }); // Make sure this listener persists
 }
-
-
 function toggleDropdown(show) {
   const dropdown = document.getElementById('country-dropdown');
   if (!dropdown) return;
   
-  if (show === undefined) {
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-  } else {
-    dropdown.style.display = show ? 'block' : 'none';
-  }
+  // Determine if we should show or hide
+  const shouldShow = show === undefined ? 
+    dropdown.style.display === 'none' : 
+    show;
   
-  // Update selected country visual indicator when opening dropdown
-  if (dropdown.style.display === 'block') {
+  // Always update position when showing the dropdown
+  if (shouldShow) {
+    const regionBadge = document.querySelector('.region-badge');
+    if (regionBadge) {
+      const rect = regionBadge.getBoundingClientRect();
+      
+      // Calculate position relative to the viewport
+      dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+      dropdown.style.left = `${rect.left + window.scrollX}px`;
+      dropdown.style.right = 'auto';
+      
+      // Ensure dropdown doesn't overflow viewport
+      const viewportWidth = window.innerWidth;
+      if (rect.left + 280 > viewportWidth) {
+        // If it would overflow right edge, align to right side of button instead
+        dropdown.style.left = 'auto';
+        dropdown.style.right = `${viewportWidth - rect.right - window.scrollX}px`;
+      }
+    }
+    
+    // Update selected country indicator
     const currentCountry = localStorage.getItem('selectedCountry') || 'GLOBAL';
     document.querySelectorAll('.country-option').forEach(option => {
       const check = option.querySelector('.selected-check');
@@ -2096,6 +2205,12 @@ function toggleDropdown(show) {
       }
     });
   }
+  
+  // Show or hide the dropdown
+  dropdown.style.display = shouldShow ? 'block' : 'none';
+  
+  // Toggle mobile overlay if needed
+  toggleOverlayForMobile(shouldShow);
 }
 function selectCountry(countryCode) {
   // Store selection in localStorage
@@ -2153,62 +2268,50 @@ document.addEventListener('DOMContentLoaded', function() {
   // Create country dropdown
   createCountryDropdown();
   
-  // Add click event for region badge if not already set
-  const regionBadge = document.querySelector('.region-badge');
-  if (regionBadge) {
-    // Remove existing event listeners to prevent duplicates
-    const newRegionBadge = regionBadge.cloneNode(true);
-    regionBadge.parentNode.replaceChild(newRegionBadge, regionBadge);
-    
-    // Add the click event
-    newRegionBadge.addEventListener('click', function(e) {
-      e.stopPropagation();
-      toggleDropdown();
-    });
-  }
+  // Set up the region badge handler once
+  setupRegionBadgeHandler();
 
-    // Clear hardcoded stream cards
-    const streamGrids = document.querySelectorAll('.stream-grid');
-    streamGrids.forEach(grid => {
-        grid.innerHTML = '';
-    });
+  // Rest of the initialization code...
+  // Clear hardcoded stream cards
+  const streamGrids = document.querySelectorAll('.stream-grid');
+  streamGrids.forEach(grid => {
+    grid.innerHTML = '';
+  });
+  
+  // Fix for the hero banner image
+  const heroVisual = document.querySelector('.hero-visual');
+  if (heroVisual) {
+    heroVisual.style.backgroundImage = "url('https://picsum.photos/800/400?random=hero')";
+  }
+  
+  // Replace placeholder images
+  document.querySelectorAll('img[src^="/api/placeholder"]').forEach(img => {
+    const alt = img.alt || 'placeholder';
+    const size = img.src.match(/\/(\d+)\/(\d+)$/);
+    let width = 400, height = 300;
     
-    // Fix for the hero banner image
-    const heroVisual = document.querySelector('.hero-visual');
-    if (heroVisual) {
-        heroVisual.style.backgroundImage = "url('https://picsum.photos/800/400?random=hero')";
+    if (size && size.length >= 3) {
+      width = size[1];
+      height = size[2];
     }
     
-    // Replace placeholder images
-    document.querySelectorAll('img[src^="/api/placeholder"]').forEach(img => {
-        const alt = img.alt || 'placeholder';
-        const size = img.src.match(/\/(\d+)\/(\d+)$/);
-        let width = 400, height = 300;
-        
-        if (size && size.length >= 3) {
-            width = size[1];
-            height = size[2];
-        }
-        
-        img.src = `https://picsum.photos/${width}/${height}?random=${Math.floor(Math.random() * 1000)}`;
-        img.setAttribute('data-original-src', img.src);
-    });
-    
-    // Get initial country to display
-    // Priority: 1. User-selected country, 2. Detected country, 3. Default (GLOBAL)
-    const userSelectedCountry = localStorage.getItem('selectedCountry');
-    const detectedCountry = localStorage.getItem('userDetectedCountry');
-    const initialCountry = userSelectedCountry || detectedCountry || 'GLOBAL';
-    
-    // Update region badge with country info
-    const countryInfo = getCountryInfo(initialCountry);
-    updateRegionBadge(countryInfo);
-    
-    // Fetch and display streams
-    populateStreamData(initialCountry);
-    addProductZoomModal();
+    img.src = `https://picsum.photos/${width}/${height}?random=${Math.floor(Math.random() * 1000)}`;
+    img.setAttribute('data-original-src', img.src);
+  });
+  
+  // Get initial country to display
+  const userSelectedCountry = localStorage.getItem('selectedCountry');
+  const detectedCountry = localStorage.getItem('userDetectedCountry');
+  const initialCountry = userSelectedCountry || detectedCountry || 'GLOBAL';
+  
+  // Update region badge with country info
+  const countryInfo = getCountryInfo(initialCountry);
+  updateRegionBadge(countryInfo);
+  
+  // Fetch and display streams
+  populateStreamData(initialCountry);
+  addProductZoomModal();
 });
-
 // Helper function to update region badge
 function updateRegionBadge(countryInfo) {
     const regionBadge = document.querySelector('.region-badge');
@@ -2220,7 +2323,23 @@ function updateRegionBadge(countryInfo) {
         if (regionText) regionText.textContent = countryInfo.name;
     }
 }
-
+function toggleOverlayForMobile(show) {
+  if (window.innerWidth <= 768) {
+    if (show) {
+      document.body.classList.add('dropdown-active');
+    } else {
+      document.body.classList.remove('dropdown-active');
+    }
+  }
+}
+const originalToggleDropdown = toggleDropdown;
+toggleDropdown = function(show) {
+  originalToggleDropdown(show);
+  
+  // Add/remove overlay for mobile
+  const dropdown = document.getElementById('country-dropdown');
+  toggleOverlayForMobile(dropdown && dropdown.style.display !== 'none');
+};
 // Update populateStreamData function to handle country detection
 function populateStreamData(countryCode) {
     // Show loading state
@@ -2399,6 +2518,8 @@ function populateStreamData(countryCode) {
         
         // Now try to enhance the data with additional details
         enhanceStreamDetails(streams);
+		
+		 setupRegionBadgeHandler();
     });
 }
 function updateDropdownSelection(countryCode) {
@@ -3034,15 +3155,9 @@ function initializeEventListeners() {
       }
     });
   });
-
-  // Region selector dropdown toggle
-  const regionBadge = document.querySelector('.region-badge');
-  if (regionBadge) {
-    regionBadge.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent closing immediately
-      toggleDropdown();
-    });
-  }
+  
+  // Remove region badge handler from here
+  // ⛔ DO NOT add region badge event listener here
   
   // Add hover effects to cards to indicate they're clickable
   const allCards = document.querySelectorAll('.stream-card, .creator-card');
@@ -3060,7 +3175,6 @@ function initializeEventListeners() {
     });
   });
 }
-
 
 </script>
 </body>
