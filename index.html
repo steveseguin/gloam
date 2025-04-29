@@ -2374,14 +2374,25 @@ function populateStreamData(countryCode) {
         }
         
         // Populate the creator section
-        if (creatorContainer) {
-            creatorContainer.innerHTML = ''; // Clear existing content
-            
-            // Use all streams as creators
-            streams.forEach((stream, index) => {
-                creatorContainer.innerHTML += createCreatorCard(stream, index);
-            });
-        }
+		if (creatorContainer) {
+			creatorContainer.innerHTML = ''; // Clear existing content
+			
+			// Remove duplicates by shopName
+			const uniqueCreators = [];
+			const seenShopNames = {};
+			
+			streams.forEach(stream => {
+				if (!seenShopNames[stream.shopName]) {
+					seenShopNames[stream.shopName] = true;
+					uniqueCreators.push(stream);
+				}
+			});
+			
+			// Use unique creators
+			uniqueCreators.forEach((stream, index) => {
+				creatorContainer.innerHTML += createCreatorCard(stream, index);
+			});
+		}
         
         // Reinitialize event listeners for the newly created elements
         initializeEventListeners();
