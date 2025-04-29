@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StageTEN - Live Shopping Discovery</title>
+    <title>Gloam! - Live Shopping Discovery</title>
+	<link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAt1BMVEVMaXG5eNC9dsbbZ4bJb6ztXV7yW1PfZX+ghvbLb6iKkv9xof+8ebDhY3iwfOS/dcSmgfl7m/+Yiv+Lkv+ogPShhPzNbqRopv+3edX5V0P4V0X8Vj7ZZ4rRa5ungfd7mv9opv/9VTvVaZK/dcPFcrWqgOfxW1bXaI76V0PSa5jPbaG3edWFlf+pgPOwfeSsfuyze97nYGvgZHvzWlCbiP/tXV2Rjv90n/96m/+kg/1to//Dc7nbZ4X85c2aAAAAJ3RSTlMAYPyf/WCZICBjn78Qqr97n49gYI+vn2ifeL+/j7+fgO/vv7+/YLop9DGbAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAYtJREFUeNpt0+l2gjAQBeBxYd9EEcWl1uUcFWjrgoDL+z9XZxKEhJZfwndNbgIBALCj+XymaiBc2mKzXBo2v1HWB7quauOL/f4Yx/2+wfzA/dokepU/nx0cf/32201te7drQ0Q8i1T029lpPPR26IkHc3KaCf18djTNYU6zb7tJ4rJAxLqgXy6vV+3gJcnJhVndX2k5TJPTtwsq9VN4QvYO+k8AGuvPExrrF2qNf+kAvL8CrYt7QD9V1l/5zwf8RmX9pXehiw7gUP+eGJhKjgnqLwbIx+LbpfWJAfS7LgVwfWIAXQrQ/ksB9EyYgvbnGIqBwT3LMlPyWF4mep6bohvyRg3R89R8f39/HBPoaerjAgTX+f7w+iP0tNRxgNr5/mP/4TtRlj5s0EPZsyphlmVhwfIY972W5/mInqzKggL4fe9qH+v6mPWnhFUUDwsM+v633pT5BxuZ9TdX5I8J2Ox8JI1jgvUvyT/xeBptZwnuOADNXnnQ7JJf/X/Cb23Pdd1Al96Fb1nWhI7/L7xtUk8YfKluAAAAAElFTkSuQmCC" />
     <style>
         :root {
             --primary: #6B46C1;
@@ -874,7 +875,7 @@
                         <path d="M6 9l6 6 6-6"/>
                     </svg>
                 </div>
-                <button class="go-live-btn">
+                <button class="go-live-btn" onclick="window.open('https://stageten.tv/creators');">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M23 7l-7 5 7 5V7z"></path>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
@@ -916,7 +917,7 @@
                 </div>
                 <div class="hero-ctas">
                     <a href="#" class="cta-primary">Start Shopping Live</a>
-                    <a href="#" class="cta-secondary">Apply as Creator</a>
+                    <a href="#" class="cta-secondary" onclick="window.open('https://stageten.tv/creators');">Apply as Creator</a>
                 </div>
             </div>
             <div class="hero-visual"></div>
@@ -1339,7 +1340,6 @@
 		</div>
     </footer>
 <script>
-// Function to fetch data from the endpoint
 async function fetchStreamData() {
     try {
         // Use our new Cloudflare worker endpoint that provides enhanced data
@@ -1347,17 +1347,25 @@ async function fetchStreamData() {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        return await response.json();
+        const data = await response.json();
+        
+        // Check if the API returns country information
+        const countryData = data.find(item => item.country);
+        
+        // Store detected country in localStorage if available
+        if (countryData && countryData.country && !localStorage.getItem('userDetectedCountry')) {
+            localStorage.setItem('userDetectedCountry', countryData.country);
+        }
+        
+        return data;
     } catch (error) {
         console.error('Error fetching data:', error);
         return null;
     }
 }
-
 // Fallback data based on your example
 function getFallbackData() {
     try {
-        // Try to get data from the paste-2.txt file that's been uploaded
         const fileContent = localStorage.getItem('stageTenFallbackData');
         if (fileContent) {
             return JSON.parse(fileContent);
@@ -1442,25 +1450,21 @@ function getFallbackData() {
         }
     ];
 }
-
 // Process stream data
 function processStreamData(data) {
     if (!Array.isArray(data)) {
         console.error('Data is not an array');
         return [];
     }
-
     const streams = data.filter(item => 
         (item.event === 'tv.stageten.plugin-commerce.output.live' && 
         item.properties && 
         item.properties.watchUrl) || 
         (item.shopName && item.watchUrl) // Support for direct data format
     );
-
     const currentTime = Date.now();
     const fourHoursInMs = 4 * 60 * 60 * 1000;
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
-
     return streams.map(stream => {
         // Handle both data formats
         const properties = stream.properties || stream;
@@ -1477,25 +1481,36 @@ function processStreamData(data) {
             timestamp = currentTime - Math.floor(Math.random() * fourHoursInMs); // Fallback
         }
         
-        // Calculate stream status
+        // Calculate stream status - FIXED
         const timeDiff = currentTime - timestamp;
-        let streamStatus = 'live';
-        if (timeDiff > fourHoursInMs) {
-            streamStatus = 'ended';
-        } else if (timeDiff < 0) {
-            streamStatus = 'upcoming';
-        }
+        let streamStatus;
         
-        // If isLive is explicitly set, honor that
-        if (stream.isLive === true) {
+        // First check explicit isLive flag from the data
+        if (stream.isLive === true || (stream.channelData && stream.channelData.isLive === true)) {
             streamStatus = 'live';
-        } else if (stream.isLive === false && streamStatus === 'live') {
-            streamStatus = 'ended';
+        } 
+        // If not explicitly live, calculate based on time
+        else if (stream.isLive === false || (stream.channelData && stream.channelData.isLive === false)) {
+            if (timeDiff > 0) {
+                streamStatus = 'ended';
+            } else {
+                streamStatus = 'upcoming';
+            }
+        }
+        // No explicit flag, use time-based logic
+        else {
+            if (timeDiff > fourHoursInMs) {
+                streamStatus = 'ended';
+            } else if (timeDiff < 0) {
+                streamStatus = 'upcoming';
+            } else {
+                streamStatus = 'live'; // Default to live if within the last 4 hours
+            }
         }
         
         // If outside 24 hour window, filter out
         if (Math.abs(timeDiff) > twentyFourHoursInMs) {
-            streamStatus = 'filtered';
+            streamStatus = 'ended';
         }
         
         return {
@@ -1521,10 +1536,25 @@ function processStreamData(data) {
             channelData: stream.channelData,
             products: stream.products || []
         };
-    }).filter(stream => stream.streamStatus !== 'filtered');
+    })
+    .filter(stream => stream.streamStatus !== 'filtered')
+    .sort((a, b) => {
+        // First sort by status (live > upcoming > ended)
+        const statusOrder = { live: 0, upcoming: 1, ended: 2 };
+        if (statusOrder[a.streamStatus] !== statusOrder[b.streamStatus]) {
+            return statusOrder[a.streamStatus] - statusOrder[b.streamStatus];
+        }
+        
+        // Then sort by age (newer first for live/upcoming, older first for ended)
+        if (a.streamStatus === 'ended') {
+            return b.timestamp - a.timestamp; // Older ended streams first
+        } else {
+            return b.timestamp - a.timestamp; // Newer live/upcoming streams first
+        }
+    });
 }
 
-	function formatTimeAgo(timestamp) {
+function formatTimeAgo(timestamp) {
     const now = Date.now();
     const diffInSeconds = Math.floor((now - timestamp) / 1000);
     
@@ -1679,7 +1709,6 @@ async function enhanceStreamWithStageTENData(stream) {
         return stream;
     }
 }
-// Generate HTML for stream cards
 function createStreamCard(stream, index) {
     // Randomize some data for variety
     const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
@@ -1690,8 +1719,8 @@ function createStreamCard(stream, index) {
     const viewerCount = viewerCounts[index % viewerCounts.length];
     const discount = discounts[index % discounts.length];
     
-    // Determine if it's Canadian based on domain, name or email
-    const isCanadian = stream.isCanadian || index % 3 === 0;
+    // Determine if it's from the user's country
+    const isLocalToUser = stream.isLocalToUser || false;
     
     // Use the enhanced data
     const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
@@ -1705,9 +1734,9 @@ function createStreamCard(stream, index) {
     // First letter of shop name for avatar fallback
     const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
     
-    // Generate random location for Canadian creators
+    // Generate random location for local creators
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
-    const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    const location = isLocalToUser ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
     // Status badge based on stream status
     let statusBadge = '';
@@ -1748,14 +1777,14 @@ function createStreamCard(stream, index) {
             <div class="product-thumb" data-product-id="${product.id}">
                 <img src="${product.imageUrl}" alt="${product.title}" 
                     onclick="showProductZoom('${product.imageUrl}', '${product.title}', '${product.price}')">
-                ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+                ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
             </div>
         `).join('') : 
         `
         <div class="product-thumb">
             <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product" 
                 onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 1}', 'Featured Product', '$${Math.floor(Math.random() * 100) + 20}')">
-            ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+            ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
         </div>
         <div class="product-thumb">
             <img src="https://picsum.photos/100/100?random=${index * 3 + 2}" alt="Product"
@@ -1764,16 +1793,16 @@ function createStreamCard(stream, index) {
         <div class="product-thumb">
             <img src="https://picsum.photos/100/100?random=${index * 3 + 3}" alt="Product"
                 onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 3}', 'New Arrival', '$${Math.floor(Math.random() * 100) + 20}')">
-            ${isCanadian ? `<div class="canadian-product-badge">🍁</div>` : ''}
+            ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
         </div>
         `;
     
     return `
-    <div class="stream-card" data-niche="${category.toLowerCase()}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
+    <div class="stream-card" data-niche="${category.toLowerCase()}" data-local="${isLocalToUser}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="stream-thumbnail">
             <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
             ${statusBadge}
-            ${isCanadian ? `<div class="canadian-badge">Canadian Made</div>` : ''}
+            ${isLocalToUser ? `<div class="canadian-badge" style="display: block;"></div>` : ''}
             <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' ? 'Watch Replay' : stream.timeAgo)}</div>
             <div class="viewer-count">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1815,10 +1844,9 @@ function createStreamCard(stream, index) {
     </div>
     `;
 }
-
 // Generate HTML for creator cards
 function createCreatorCard(stream, index) {
-    const isCanadian = stream.isCanadian || index % 3 === 0;
+    const isLocalToUser = stream.isLocalToUser || false;
                       
     // Use the enhanced data
     const displayName = stream.displayName || stream.shopName;
@@ -1833,9 +1861,9 @@ function createCreatorCard(stream, index) {
     const categories = ['Fashion Influencer', 'Beauty Expert', 'Style Consultant', 'Makeup Artist', 'Wellness Guide'];
     const category = categories[index % categories.length];
     
-    // Generate random location for Canadian creators
+    // Generate random location for local creators
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
-    const location = isCanadian ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    const location = isLocalToUser ? ` - ${canadianCities[index % canadianCities.length]}` : '';
     
     // Generate social links if available
     let socialLinksHtml = '';
@@ -1851,14 +1879,14 @@ function createCreatorCard(stream, index) {
     }
     
     return `
-    <div class="creator-card" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
+    <div class="creator-card" data-local="${isLocalToUser}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
         <div class="creator-card-header" style="position: relative;">
             ${avatarUrl ? 
                 `<div class="creator-avatar-large" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` : 
                 `<div class="creator-avatar-large" ${index % 2 === 0 && !avatarUrl ? `style="background-image:url('https://picsum.photos/200/200?random=${index}');"` : ''}>${index % 2 !== 0 && !avatarUrl ? avatarInitials : ''}</div>`
             }
             <div class="creator-verified">✓</div>
-            ${isCanadian ? `<div class="canadian-creator-tag">Canadian Creator</div>` : ''}
+            ${isLocalToUser ? `<div class="canadian-creator-tag" style="display: block;"></div>` : ''}
         </div>
         <h3 class="creator-name-large">${displayName.split(' ')[0]}</h3>
         <p class="creator-category">${category}${location}</p>
@@ -1917,123 +1945,721 @@ function showLoadingState() {
         document.head.appendChild(style);
     }
 }
+// Add after line 1087 (after processStreamData function)
+function getCountryInfo(countryCode) {
+  const countryMap = {
+    "US": { name: "United States", emoji: "🇺🇸", niceName: "American" },
+    "CA": { name: "Canada", emoji: "🍁", niceName: "Canadian" },
+    "GB": { name: "United Kingdom", emoji: "🇬🇧", niceName: "British" },
+    "AU": { name: "Australia", emoji: "🇦🇺", niceName: "Australian" },
+    "DE": { name: "Germany", emoji: "🇩🇪", niceName: "German" },
+    "FR": { name: "France", emoji: "🇫🇷", niceName: "French" },
+    "JP": { name: "Japan", emoji: "🇯🇵", niceName: "Japanese" },
+    "KR": { name: "South Korea", emoji: "🇰🇷", niceName: "Korean" },
+    "BR": { name: "Brazil", emoji: "🇧🇷", niceName: "Brazilian" },
+    "IT": { name: "Italy", emoji: "🇮🇹", niceName: "Italian" },
+    "ES": { name: "Spain", emoji: "🇪🇸", niceName: "Spanish" },
+    "CN": { name: "China", emoji: "🇨🇳", niceName: "Chinese" },
+    "IN": { name: "India", emoji: "🇮🇳", niceName: "Indian" },
+    "MX": { name: "Mexico", emoji: "🇲🇽", niceName: "Mexican" },
+    "SG": { name: "Singapore", emoji: "🇸🇬", niceName: "Singaporean" },
+  };
+  
+  return countryMap[countryCode] || { name: "Global", emoji: "🌎", niceName: "Local" };
+}
 
-// Populate the stream section and creator section with data
-async function populateStreamData() {
+const SUPPORTED_COUNTRIES = [
+  { code: "US", name: "United States", emoji: "🇺🇸" },
+  { code: "CA", name: "Canada", emoji: "🍁" },
+  { code: "GB", name: "United Kingdom", emoji: "🇬🇧" },
+  { code: "AU", name: "Australia", emoji: "🇦🇺" },
+  { code: "DE", name: "Germany", emoji: "🇩🇪" },
+  { code: "FR", name: "France", emoji: "🇫🇷" },
+  { code: "JP", name: "Japan", emoji: "🇯🇵" },
+  { code: "KR", name: "South Korea", emoji: "🇰🇷" },
+  { code: "BR", name: "Brazil", emoji: "🇧🇷" },
+  { code: "IT", name: "Italy", emoji: "🇮🇹" },
+  { code: "ES", name: "Spain", emoji: "🇪🇸" },
+  { code: "CN", name: "China", emoji: "🇨🇳" },
+  { code: "IN", name: "India", emoji: "🇮🇳" },
+  { code: "MX", name: "Mexico", emoji: "🇲🇽" },
+  { code: "SG", name: "Singapore", emoji: "🇸🇬" },
+  { code: "GLOBAL", name: "Global", emoji: "🌎" }
+];
+
+function createCountryDropdown() {
+  const existingDropdown = document.getElementById('country-dropdown');
+  if (existingDropdown) return;
+
+  // Create dropdown element
+  const dropdown = document.createElement('div');
+  dropdown.id = 'country-dropdown';
+  dropdown.style.position = 'absolute';
+  dropdown.style.top = '72px';
+  dropdown.style.right = '24px';
+  dropdown.style.background = 'var(--surface)';
+  dropdown.style.borderRadius = '12px';
+  dropdown.style.boxShadow = 'var(--shadow-lg)';
+  dropdown.style.padding = '12px';
+  dropdown.style.width = '280px';
+  dropdown.style.maxHeight = '400px';
+  dropdown.style.overflowY = 'auto';
+  dropdown.style.zIndex = '200';
+  dropdown.style.display = 'none';
+  dropdown.style.animation = 'fadeIn 0.2s ease-out';
+
+  // Create header
+  const header = document.createElement('div');
+  header.style.borderBottom = '1px solid var(--border)';
+  header.style.paddingBottom = '8px';
+  header.style.marginBottom = '8px';
+  header.innerHTML = `
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Select Region</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Choose your location to see local content</p>
+  `;
+  dropdown.appendChild(header);
+
+  // Add countries to dropdown
+  SUPPORTED_COUNTRIES.forEach(country => {
+    const countryOption = document.createElement('div');
+    countryOption.classList.add('country-option');
+    countryOption.dataset.code = country.code;
+    countryOption.style.padding = '10px 12px';
+    countryOption.style.margin = '4px 0';
+    countryOption.style.borderRadius = '8px';
+    countryOption.style.cursor = 'pointer';
+    countryOption.style.display = 'flex';
+    countryOption.style.alignItems = 'center';
+    countryOption.style.justifyContent = 'space-between';
+    countryOption.style.transition = 'background 0.2s ease';
+    
+    countryOption.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">${country.emoji}</span>
+        <span>${country.name}</span>
+      </div>
+      <span class="selected-check" style="color: var(--primary); font-weight: bold; display: none;">✓</span>
+    `;
+    
+    countryOption.addEventListener('mouseover', () => {
+      countryOption.style.background = 'var(--background)';
+    });
+    
+    countryOption.addEventListener('mouseout', () => {
+      countryOption.style.background = '';
+    });
+    
+    countryOption.addEventListener('click', () => {
+      selectCountry(country.code);
+      toggleDropdown(false);
+    });
+    
+    dropdown.appendChild(countryOption);
+  });
+
+  // Add dropdown to DOM
+  document.body.appendChild(dropdown);
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const isDropdown = e.target.closest('#country-dropdown');
+    const isRegionBadge = e.target.closest('.region-badge');
+    
+    if (!isDropdown && !isRegionBadge) {
+      toggleDropdown(false);
+    }
+  });
+}
+
+
+function toggleDropdown(show) {
+  const dropdown = document.getElementById('country-dropdown');
+  if (!dropdown) return;
+  
+  if (show === undefined) {
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  } else {
+    dropdown.style.display = show ? 'block' : 'none';
+  }
+  
+  // Update selected country visual indicator when opening dropdown
+  if (dropdown.style.display === 'block') {
+    const currentCountry = localStorage.getItem('selectedCountry') || 'GLOBAL';
+    document.querySelectorAll('.country-option').forEach(option => {
+      const check = option.querySelector('.selected-check');
+      if (option.dataset.code === currentCountry) {
+        option.style.background = 'var(--background)';
+        check.style.display = 'block';
+      } else {
+        option.style.background = '';
+        check.style.display = 'none';
+      }
+    });
+  }
+}
+function selectCountry(countryCode) {
+  // Store selection in localStorage
+  localStorage.setItem('selectedCountry', countryCode);
+  
+  // Get country info
+  const countryInfo = getCountryInfo(countryCode);
+  
+  // Update UI
+  updateCountrySpecificUI(countryCode, countryInfo);
+  
+  // Update region badge immediately
+  const regionBadge = document.querySelector('.region-badge');
+  if (regionBadge) {
+    const regionSpan = regionBadge.querySelector('span:nth-child(1)');
+    const regionText = regionBadge.querySelector('span:nth-child(2)');
+    
+    if (regionSpan) regionSpan.textContent = countryInfo.emoji;
+    if (regionText) regionText.textContent = countryInfo.name;
+  }
+  
+  // Refresh stream data with new country
+  populateStreamData(countryCode);
+}
+
+async function fetchStreamData() {
+    try {
+        // Use our new Cloudflare worker endpoint that provides enhanced data
+        const response = await fetch('https://young-grass-8d02.vdo.workers.dev/');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Check if the API returns country information
+        const countryData = data.find(item => item.country);
+        
+        // Store detected country in localStorage if available
+        if (countryData && countryData.country && !localStorage.getItem('userDetectedCountry')) {
+            localStorage.setItem('userDetectedCountry', countryData.country);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+}
+document.querySelector('.region-badge').addEventListener('click', function(e) {
+  e.stopPropagation();
+  toggleDropdown();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Create country dropdown
+  createCountryDropdown();
+  
+  // Add click event for region badge if not already set
+  const regionBadge = document.querySelector('.region-badge');
+  if (regionBadge) {
+    // Remove existing event listeners to prevent duplicates
+    const newRegionBadge = regionBadge.cloneNode(true);
+    regionBadge.parentNode.replaceChild(newRegionBadge, regionBadge);
+    
+    // Add the click event
+    newRegionBadge.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+  }
+
+    // Clear hardcoded stream cards
+    const streamGrids = document.querySelectorAll('.stream-grid');
+    streamGrids.forEach(grid => {
+        grid.innerHTML = '';
+    });
+    
+    // Fix for the hero banner image
+    const heroVisual = document.querySelector('.hero-visual');
+    if (heroVisual) {
+        heroVisual.style.backgroundImage = "url('https://picsum.photos/800/400?random=hero')";
+    }
+    
+    // Replace placeholder images
+    document.querySelectorAll('img[src^="/api/placeholder"]').forEach(img => {
+        const alt = img.alt || 'placeholder';
+        const size = img.src.match(/\/(\d+)\/(\d+)$/);
+        let width = 400, height = 300;
+        
+        if (size && size.length >= 3) {
+            width = size[1];
+            height = size[2];
+        }
+        
+        img.src = `https://picsum.photos/${width}/${height}?random=${Math.floor(Math.random() * 1000)}`;
+        img.setAttribute('data-original-src', img.src);
+    });
+    
+    // Get initial country to display
+    // Priority: 1. User-selected country, 2. Detected country, 3. Default (GLOBAL)
+    const userSelectedCountry = localStorage.getItem('selectedCountry');
+    const detectedCountry = localStorage.getItem('userDetectedCountry');
+    const initialCountry = userSelectedCountry || detectedCountry || 'GLOBAL';
+    
+    // Update region badge with country info
+    const countryInfo = getCountryInfo(initialCountry);
+    updateRegionBadge(countryInfo);
+    
+    // Fetch and display streams
+    populateStreamData(initialCountry);
+    addProductZoomModal();
+});
+
+// Helper function to update region badge
+function updateRegionBadge(countryInfo) {
+    const regionBadge = document.querySelector('.region-badge');
+    if (regionBadge && countryInfo) {
+        const regionSpan = regionBadge.querySelector('span:nth-child(1)');
+        const regionText = regionBadge.querySelector('span:nth-child(2)');
+        
+        if (regionSpan) regionSpan.textContent = countryInfo.emoji;
+        if (regionText) regionText.textContent = countryInfo.name;
+    }
+}
+
+// Update populateStreamData function to handle country detection
+function populateStreamData(countryCode) {
     // Show loading state
     showLoadingState();
     
-    // Try to load the fallback data from paste-2.txt at startup
-    try {
-        const fileContent = await fetch('paste-2.txt')
-            .then(response => response.text())
-            .catch(() => null);
-        
-        if (fileContent) {
-            localStorage.setItem('stageTenFallbackData', fileContent);
-            console.log('Loaded fallback data from paste-2.txt');
-        }
-    } catch (error) {
-        console.error('Error loading paste-2.txt:', error);
-    }
-    
     // Try to get data from primary source
-    let streams = await fetchStreamData();
-    
-    // If no data available from primary source, use fallback
-    if (!streams) {
-        console.log('No data from primary API, using fallback data');
-        streams = processStreamData(getFallbackData());
-    } else {
-        // Process the data if it's from the primary source
+    fetchStreamData().then(streams => {
+        // Get country in order of priority: specified > user selected > detected > default
+        let userCountry = countryCode || 
+                          localStorage.getItem('selectedCountry') || 
+                          localStorage.getItem('userDetectedCountry') || 
+                          "GLOBAL";
+        
+        // If it's the first page load and we got a country from the API
+        // and the user hasn't already selected a country, use the detected country
+        if (!countryCode && !localStorage.getItem('selectedCountry') && streams && 
+            streams.find(s => s.country) && streams.find(s => s.country).country) {
+            userCountry = streams.find(s => s.country).country;
+            localStorage.setItem('userDetectedCountry', userCountry);
+        }
+        
+        // If not a valid country code, default to GLOBAL
+        if (!SUPPORTED_COUNTRIES.find(c => c.code === userCountry)) {
+            userCountry = "GLOBAL";
+        }
+        
+        // If we're auto-selecting the user's country based on detection,
+        // save that as their selected country for consistency
+        if (!localStorage.getItem('selectedCountry') && userCountry !== 'GLOBAL') {
+            localStorage.setItem('selectedCountry', userCountry);
+        }
+        
+        // Get country information from the code
+        const countryInfo = getCountryInfo(userCountry);
+        console.log(`User country: ${userCountry} (${countryInfo.name})`);
+        
+        // Update UI elements based on country
+        updateCountrySpecificUI(userCountry, countryInfo);
+        
+        // Update the region badge to show current selection
+        updateRegionBadge(countryInfo);
+        
+        // Update selected indicator in dropdown
+        updateDropdownSelection(userCountry);
+        
+        // If no data available from primary source, use fallback
+        if (!streams) {
+            console.log('No data from primary API, using fallback data');
+            streams = getFallbackData();
+        }
+        
+        // Process streams and continue with existing code...
         streams = processStreamData(streams);
-    }
-    
-    if (!streams || streams.length === 0) {
-        console.error('No stream data available after processing');
-        // Create some dummy streams as a last resort
-        streams = [
-            {
-                shopName: "Fashion & Beauty Studio",
-                shopDomain: "fashion-beauty.com",
-                shopUrl: "https://fashion-beauty.com",
-                watchUrl: "https://example.com/watch/1",
-                isLive: true,
-                title: "Spring Fashion Trends 2025",
-                description: "Discover the hottest trends for spring 2025!"
-            },
-            {
-                shopName: "Luxury Boutique",
-                shopDomain: "luxuryboutique.com",
-                shopUrl: "https://luxuryboutique.com",
-                watchUrl: "https://example.com/watch/2",
-                isLive: true,
-                title: "Luxury Skincare Collection",
-                description: "Premium skincare products for radiant skin"
-            },
-            {
-                shopName: "Style Hub",
-                shopDomain: "stylehub.com",
-                shopUrl: "https://stylehub.com",
-                watchUrl: "https://example.com/watch/3",
-                isLive: false,
-                title: "Men's Fashion Essentials",
-                description: "Essential pieces for every man's wardrobe"
-            },
-            {
-                shopName: "Beauty World",
-                shopDomain: "beautyworld.com",
-                shopUrl: "https://beautyworld.com",
-                watchUrl: "https://example.com/watch/4",
-                isLive: true,
-                title: "Makeup Masterclass",
-                description: "Professional makeup techniques"
+        console.log(`Processed ${streams.length} streams`);
+        
+        // Rest of function remains the same...
+        // Mark streams from the same country as the user
+        streams = streams.map(stream => {
+            // Determine if stream is from user's country
+            const isFromUserCountry = determineStreamCountry(stream, userCountry);
+            return { ...stream, isLocalToUser: isFromUserCountry };
+        });
+        
+        // Sort streams - local ones first, then by status
+        streams.sort((a, b) => {
+            // First prioritize by local vs non-local
+            if (a.isLocalToUser !== b.isLocalToUser) {
+                return a.isLocalToUser ? -1 : 1;
             }
-        ];
-    }
-    
-    // Get the container for live streams
-    const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
-    if (liveStreamContainer) {
-        liveStreamContainer.innerHTML = ''; // Clear existing content
-        // Add the first 4 streams to the live section
-        const liveStreams = streams.slice(0, 4);
-        liveStreams.forEach((stream, index) => {
-            liveStreamContainer.innerHTML += createStreamCard(stream, index);
+            
+            // Then sort by status
+            const statusOrder = { live: 0, upcoming: 1, ended: 2 };
+            if (statusOrder[a.streamStatus] !== statusOrder[b.streamStatus]) {
+                return statusOrder[a.streamStatus] - statusOrder[b.streamStatus];
+            }
+            
+            // Finally sort by timestamp
+            if (a.streamStatus === 'ended') {
+                return b.timestamp - a.timestamp; // Older ended streams first
+            } else {
+                return b.timestamp - a.timestamp; // Newer live/upcoming streams first
+            }
         });
-    }
+        
+        // Continue with updating the UI...
+        // Existing code for populating containers...
+        
+        // Get the containers
+        const liveStreamContainer = document.querySelector('.section:nth-of-type(1) .stream-grid');
+        const upcomingStreamContainer = document.querySelector('.section:nth-of-type(3) .stream-grid');
+        const creatorContainer = document.querySelector('.creator-grid');
+        
+        // Group streams by status
+        const liveStreams = streams.filter(stream => stream.streamStatus === 'live');
+        const upcomingStreams = streams.filter(stream => stream.streamStatus === 'upcoming');
+        const endedStreams = streams.filter(stream => stream.streamStatus === 'ended');
+        
+        console.log(`Live: ${liveStreams.length}, Upcoming: ${upcomingStreams.length}, Ended: ${endedStreams.length}`);
+        
+        // Populate containers as before...
+        // Populate the "Live Now" section
+        if (liveStreamContainer) {
+            liveStreamContainer.innerHTML = ''; // Clear existing content
+            
+            // Create a combined array of all streams for display, prioritizing live ones
+            let displayStreams = [];
+            
+            // First add all live streams
+            displayStreams = displayStreams.concat(liveStreams);
+            
+            // Then add upcoming streams
+            displayStreams = displayStreams.concat(upcomingStreams);
+            
+            // Then add ended streams until we have at least 4 (or all if less than 4)
+            const neededEndedStreams = Math.max(0, 4 - displayStreams.length);
+            displayStreams = displayStreams.concat(endedStreams.slice(0, neededEndedStreams));
+            
+            // If we still don't have enough, use all remaining streams
+            if (displayStreams.length < 4 && displayStreams.length < streams.length) {
+                const remainingStreams = streams.filter(s => 
+                    !displayStreams.some(ds => ds.shopName === s.shopName && ds.watchUrl === s.watchUrl));
+                displayStreams = displayStreams.concat(remainingStreams);
+            }
+            
+            // Display streams in the grid (up to a reasonable maximum)
+            const maxToDisplay = Math.min(displayStreams.length, 8);
+            console.log(`Displaying ${maxToDisplay} streams in the "Live Now" section`);
+            
+            for (let i = 0; i < maxToDisplay; i++) {
+                liveStreamContainer.innerHTML += createStreamCard(displayStreams[i], i);
+            }
+        }
+        
+        // Populate the "Starting Soon" section
+        if (upcomingStreamContainer) {
+            upcomingStreamContainer.innerHTML = ''; // Clear existing content
+            
+            // If we have upcoming streams, show them first
+            if (upcomingStreams.length > 0) {
+                upcomingStreams.forEach((stream, index) => {
+                    upcomingStreamContainer.innerHTML += createStreamCard(stream, index);
+                });
+            } 
+            // Otherwise, show some ended streams
+            else {
+                const displayCount = Math.min(endedStreams.length, 2);
+                for (let i = 0; i < displayCount; i++) {
+                    upcomingStreamContainer.innerHTML += createStreamCard(endedStreams[i], i);
+                }
+            }
+        }
+        
+        // Populate the creator section
+        if (creatorContainer) {
+            creatorContainer.innerHTML = ''; // Clear existing content
+            
+            // Use all streams as creators
+            streams.forEach((stream, index) => {
+                creatorContainer.innerHTML += createCreatorCard(stream, index);
+            });
+        }
+        
+        // Reinitialize event listeners for the newly created elements
+        initializeEventListeners();
+        
+        // Now try to enhance the data with additional details
+        enhanceStreamDetails(streams);
+    });
+}
+function updateDropdownSelection(countryCode) {
+    const dropdown = document.getElementById('country-dropdown');
+    if (!dropdown) return;
     
-    // Get the container for starting soon streams
-    const upcomingStreamContainer = document.querySelector('.section:nth-of-type(3) .stream-grid');
-    if (upcomingStreamContainer) {
-        upcomingStreamContainer.innerHTML = ''; // Clear existing content
-        // Add the next 2 streams to the upcoming section
-        const upcomingStreams = streams.slice(0, 2);
-        upcomingStreams.forEach((stream, index) => {
-            // Override isLive for upcoming streams
-            const upcomingStream = {...stream, isLive: false};
-            upcomingStreamContainer.innerHTML += createStreamCard(upcomingStream, index + 4);
-        });
-    }
-    
-    // Get the container for creators
-    const creatorContainer = document.querySelector('.creator-grid');
-    if (creatorContainer) {
-        creatorContainer.innerHTML = ''; // Clear existing content
-        // Use all streams as creators
-        streams.forEach((stream, index) => {
-            creatorContainer.innerHTML += createCreatorCard(stream, index);
-        });
-    }
-    
-    // Reinitialize event listeners for the newly created elements
-    initializeEventListeners();
-    
-    // Now try to enhance the data with additional details
-    enhanceStreamDetails(streams);
+    document.querySelectorAll('.country-option').forEach(option => {
+        const check = option.querySelector('.selected-check');
+        if (option.dataset.code === countryCode) {
+            option.style.background = 'var(--background)';
+            check.style.display = 'block';
+        } else {
+            option.style.background = '';
+            check.style.display = 'none';
+        }
+    });
 }
 
-	function addProductZoomModal() {
+function determineStreamCountry(stream, userCountry) {
+    // Logic to determine if stream is from user's country
+    const isFromCanada = (
+        stream.isCanadian || 
+        (stream.shopDomain && stream.shopDomain.includes('.ca')) ||
+        (stream.shopName && stream.shopName.toLowerCase().includes('canadian')) ||
+        (stream.email && stream.email.toLowerCase().includes('.ca'))
+    );
+    
+    // For Canada, specifically check Canadian identifiers
+    if (userCountry === "CA" && isFromCanada) {
+        return true;
+    }
+    
+    // For other countries, check domain extensions or keywords in shop name/email
+    const countryDomains = {
+        "US": [".us", ".com"],
+        "GB": [".uk", ".co.uk"],
+        "AU": [".au", ".com.au"],
+        "DE": [".de"],
+        "FR": [".fr"],
+        "JP": [".jp"],
+        "KR": [".kr"],
+        "BR": [".br", ".com.br"],
+        "IT": [".it"],
+        "ES": [".es"],
+        "CN": [".cn"],
+        "IN": [".in"],
+        "MX": [".mx"],
+        "SG": [".sg"]
+    };
+    
+    // Check country-specific keywords in shop name
+    const countryKeywords = {
+        "US": ["america", "usa", "states"],
+        "GB": ["uk", "britain", "british", "england"],
+        "AU": ["australia", "aussie"],
+        "DE": ["german", "deutschland"],
+        "FR": ["france", "french"],
+        "JP": ["japan", "japanese"],
+        "KR": ["korea", "korean"],
+        "BR": ["brazil", "brazilian"],
+        "IT": ["italy", "italian"],
+        "ES": ["spain", "spanish"],
+        "IN": ["india", "indian"],
+        "MX": ["mexico", "mexican"],
+        "SG": ["singapore", "singaporean"]
+    };
+    
+    // Check domain extensions
+    if (stream.shopDomain && countryDomains[userCountry]) {
+        for (const domain of countryDomains[userCountry]) {
+            if (stream.shopDomain.toLowerCase().endsWith(domain)) {
+                return true;
+            }
+        }
+    }
+    
+    // Check country keywords in shop name or email
+    if (countryKeywords[userCountry]) {
+        const shopNameLower = (stream.shopName || "").toLowerCase();
+        const emailLower = (stream.email || "").toLowerCase();
+        
+        for (const keyword of countryKeywords[userCountry]) {
+            if (shopNameLower.includes(keyword) || emailLower.includes(keyword)) {
+                return true;
+            }
+        }
+    }
+    
+    // Check any explicit country field that might be available
+    if (stream.country === userCountry) {
+        return true;
+    }
+    
+    // Default to false if no matches
+    return false;
+}
+
+// Function to update UI elements based on country
+function updateCountrySpecificUI(userCountry, countryInfo) {
+    // Update the region badge in the header
+    const regionBadge = document.querySelector('.region-badge');
+    if (regionBadge) {
+        const regionSpan = regionBadge.querySelector('span:nth-child(1)');
+        const regionText = regionBadge.querySelector('span:nth-child(2)');
+        
+        if (regionSpan) regionSpan.textContent = countryInfo.emoji;
+        if (regionText) regionText.textContent = countryInfo.name;
+    }
+    
+    // Show/hide the Canadian shipping banner based on country
+    const shippingBanner = document.querySelector('.free-shipping-banner');
+    if (shippingBanner) {
+        if (userCountry === "CA") {
+            shippingBanner.style.display = 'flex';
+            // Update the text to be more specific
+            shippingBanner.innerHTML = `
+                <span>${countryInfo.emoji} BUY ${countryInfo.niceName.toUpperCase()}-MADE, GET FREE SHIPPING!</span>
+                <span style="font-weight: 400;">StageTEN covers shipping for all locally made products</span>
+            `;
+        } else {
+            shippingBanner.style.display = 'none';
+        }
+    }
+    
+    // Update "Canadian Made" badges to be country-specific
+    document.querySelectorAll('.canadian-badge').forEach(badge => {
+        badge.className = 'canadian-badge';
+        badge.classList.add(`${countryInfo.niceName.toLowerCase()}-badge`);
+        badge.textContent = `${countryInfo.niceName} Made`;
+        badge.style.display = 'none'; // Hide by default, will show for matching country streams
+    });
+    
+    // Update "Canadian Creator" tags
+    document.querySelectorAll('.canadian-creator-tag').forEach(tag => {
+        tag.className = 'canadian-creator-tag';
+        tag.classList.add(`${countryInfo.niceName.toLowerCase()}-creator-tag`);
+        tag.textContent = `${countryInfo.niceName} Creator`;
+        tag.style.display = 'none'; // Hide by default, will show for matching country creators
+    });
+    
+    // Update product badges
+    document.querySelectorAll('.canadian-product-badge').forEach(badge => {
+        badge.className = 'canadian-product-badge';
+        badge.classList.add(`${countryInfo.niceName.toLowerCase()}-product-badge`);
+        badge.innerHTML = countryInfo.emoji;
+        badge.style.display = 'none'; // Hide by default
+    });
+    
+    // Add country-specific styles
+    addCountrySpecificStyles(userCountry, countryInfo);
+}
+
+// Add custom styles for each country
+function addCountrySpecificStyles(userCountry, countryInfo) {
+    // Remove any existing country styles
+    const existingStyles = document.getElementById('country-specific-styles');
+    if (existingStyles) existingStyles.remove();
+    
+    // Define country-specific colors
+    const countryColors = {
+        "US": { primary: "#3C3B6E", secondary: "#B22234" },
+        "CA": { primary: "#D64045", secondary: "#B03236" },
+        "GB": { primary: "#012169", secondary: "#C8102E" },
+        "AU": { primary: "#00008B", secondary: "#FF0000" },
+        "DE": { primary: "#000000", secondary: "#DD0000" },
+        "FR": { primary: "#0055A4", secondary: "#EF4135" },
+        "JP": { primary: "#BC002D", secondary: "#000000" },
+        "KR": { primary: "#003478", secondary: "#C60C30" },
+        "BR": { primary: "#009C3B", secondary: "#FFDF00" },
+        "IT": { primary: "#008C45", secondary: "#CD212A" },
+        "ES": { primary: "#AA151B", secondary: "#F1BF00" },
+        "CN": { primary: "#DE2910", secondary: "#FFDE00" },
+        "IN": { primary: "#FF9933", secondary: "#138808" },
+        "MX": { primary: "#006847", secondary: "#CE1126" },
+        "SG": { primary: "#ED2939", secondary: "#FFFFFF" },
+        "default": { primary: "#6B46C1", secondary: "#ED64A6" }
+    };
+    
+    // Get colors for this country or use default
+    const colors = countryColors[userCountry] || countryColors.default;
+    
+    // Create new style element
+    const styleEl = document.createElement('style');
+    styleEl.id = 'country-specific-styles';
+    
+    // Add country-specific badge styles
+    styleEl.textContent = `
+        .${countryInfo.niceName.toLowerCase()}-badge {
+            position: absolute;
+            top: 12px;
+            left: 72px; /* Positioned next to LIVE badge */
+            background: ${colors.primary};
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .${countryInfo.niceName.toLowerCase()}-badge::before {
+            content: '${countryInfo.emoji}';
+        }
+        
+        .${countryInfo.niceName.toLowerCase()}-creator-tag {
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${colors.primary};
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .${countryInfo.niceName.toLowerCase()}-creator-tag::before {
+            content: '${countryInfo.emoji}';
+            font-size: 10px;
+        }
+        
+        .${countryInfo.niceName.toLowerCase()}-product-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(${hexToRgb(colors.primary)}, 0.9);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .free-shipping-banner {
+            background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%);
+        }
+        
+        /* Highlight streams from this country */
+        .stream-card[data-local="true"] {
+            border: 2px solid ${colors.primary};
+            box-shadow: 0 0 15px rgba(${hexToRgb(colors.primary)}, 0.3);
+        }
+    `;
+    
+    // Add the styles to the page
+    document.head.appendChild(styleEl);
+}
+
+// Helper function to convert hex to RGB
+function hexToRgb(hex) {
+    // Remove the # if present
+    hex = hex.replace('#', '');
+    
+    // Parse the hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    return `${r}, ${g}, ${b}`;
+}
+function addProductZoomModal() {
     // Add the modal HTML to the page
     const modalHtml = `
     <div id="product-zoom-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center;">
@@ -2152,14 +2778,23 @@ async function populateStreamData() {
     });
 }
 
-// Fix the hero banner image
 document.addEventListener('DOMContentLoaded', function() {
+    // Create country dropdown
+    createCountryDropdown();
+
+    // Clear hardcoded stream cards
+    const streamGrids = document.querySelectorAll('.stream-grid');
+    streamGrids.forEach(grid => {
+        grid.innerHTML = '';
+    });
+    
+    // Fix for the hero banner image
     const heroVisual = document.querySelector('.hero-visual');
     if (heroVisual) {
         heroVisual.style.backgroundImage = "url('https://picsum.photos/800/400?random=hero')";
     }
     
-    // Replace all img src attributes that use /api/placeholder
+    // Replace placeholder images
     document.querySelectorAll('img[src^="/api/placeholder"]').forEach(img => {
         const alt = img.alt || 'placeholder';
         const size = img.src.match(/\/(\d+)\/(\d+)$/);
@@ -2173,11 +2808,35 @@ document.addEventListener('DOMContentLoaded', function() {
         img.src = `https://picsum.photos/${width}/${height}?random=${Math.floor(Math.random() * 1000)}`;
         img.setAttribute('data-original-src', img.src);
     });
+    
+    // Get initial country to display
+    // Priority: 1. User-selected country, 2. Detected country, 3. Default (GLOBAL)
+    const userSelectedCountry = localStorage.getItem('selectedCountry');
+    const detectedCountry = localStorage.getItem('userDetectedCountry');
+    const initialCountry = userSelectedCountry || detectedCountry || 'GLOBAL';
+    
+    // Update region badge with country info
+    const countryInfo = getCountryInfo(initialCountry);
+    updateRegionBadge(countryInfo);
+    
+    // Fetch and display streams
+    populateStreamData(initialCountry);
+    addProductZoomModal();
 });
-
+function updateRegionBadge(countryInfo) {
+    const regionBadge = document.querySelector('.region-badge');
+    if (regionBadge && countryInfo) {
+        const regionSpan = regionBadge.querySelector('span:nth-child(1)');
+        const regionText = regionBadge.querySelector('span:nth-child(2)');
+        
+        if (regionSpan) regionSpan.textContent = countryInfo.emoji;
+        if (regionText) regionText.textContent = countryInfo.name;
+    }
+}
 // Enhance stream details with additional data from StageTEN
 async function enhanceStreamDetails(streams) {
     // We'll process the streams in parallel for efficiency
+	
     const enhancementPromises = streams.map(enhanceStreamWithStageTENData);
     
     try {
@@ -2329,70 +2988,69 @@ function updateStreamUI(enhancedStreams) {
 
 // Initialize event listeners for interactive elements
 function initializeEventListeners() {
-    // Niche filtering
-    const nicheButtons = document.querySelectorAll('.niche-btn');
-    const streamCards = document.querySelectorAll('.stream-card');
+  // Niche filtering
+  const nicheButtons = document.querySelectorAll('.niche-btn');
+  const streamCards = document.querySelectorAll('.stream-card');
 
-    nicheButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            nicheButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            const selectedNiche = button.dataset.niche;
-            
-            streamCards.forEach(card => {
-                if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
+  nicheButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      nicheButtons.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      
+      const selectedNiche = button.dataset.niche;
+      
+      streamCards.forEach(card => {
+        if (selectedNiche === 'all' || card.dataset.niche === selectedNiche) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
     });
+  });
 
-    // Follow button interaction
-    const followButtons = document.querySelectorAll('.follow-button');
-    followButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent clicking through to parent element
-            if (button.textContent === 'Follow') {
-                button.textContent = 'Following';
-                button.style.background = 'var(--success)';
-            } else {
-                button.textContent = 'Follow';
-                button.style.background = '';
-            }
-        });
+  // Follow button interaction
+  const followButtons = document.querySelectorAll('.follow-button');
+  followButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent clicking through to parent element
+      if (button.textContent === 'Follow') {
+        button.textContent = 'Following';
+        button.style.background = 'var(--success)';
+      } else {
+        button.textContent = 'Follow';
+        button.style.background = '';
+      }
     });
+  });
 
-    // Region selector placeholder
-    const regionBadge = document.querySelector('.region-badge');
-    if (regionBadge) {
-        regionBadge.addEventListener('click', () => {
-            console.log('Region selector clicked');
-        });
-    }
+  // Region selector dropdown toggle
+  const regionBadge = document.querySelector('.region-badge');
+  if (regionBadge) {
+    regionBadge.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent closing immediately
+      toggleDropdown();
+    });
+  }
+  
+  // Add hover effects to cards to indicate they're clickable
+  const allCards = document.querySelectorAll('.stream-card, .creator-card');
+  allCards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      card.style.transform = 'translateY(-5px)';
+      card.style.boxShadow = 'var(--shadow-lg)';
+      card.style.borderColor = 'var(--primary-light)';
+    });
     
-    // Add hover effects to cards to indicate they're clickable
-    const allCards = document.querySelectorAll('.stream-card, .creator-card');
-    allCards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-5px)';
-            card.style.boxShadow = 'var(--shadow-lg)';
-            card.style.borderColor = 'var(--primary-light)';
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = '';
-            card.style.boxShadow = '';
-            card.style.borderColor = '';
-        });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      card.style.boxShadow = '';
+      card.style.borderColor = '';
     });
+  });
 }
 
-// Call this function when the page loads
-document.addEventListener('DOMContentLoaded', populateStreamData);
-document.addEventListener('DOMContentLoaded', addProductZoomModal);
+
 </script>
 </body>
 </html>
