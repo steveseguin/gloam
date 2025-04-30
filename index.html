@@ -1415,6 +1415,44 @@
         }
     ];
 }
+function filterDuplicateStreams(streams) {
+  if (!Array.isArray(streams)) {
+    console.error('Input is not an array');
+    return [];
+  }
+
+  // Create a map to track streams by channelId
+  const uniqueStreams = new Map();
+  
+  // Sort streams by timestamp in descending order (newest first)
+  const sortedStreams = [...streams].sort((a, b) => {
+    const timestampA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+    const timestampB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+    return timestampB - timestampA;
+  });
+  
+  // Keep only the most recent stream for each channelId
+  sortedStreams.forEach(stream => {
+    const channelId = stream.channelId;
+    
+    // Skip entries without channelId
+    if (!channelId) return;
+    
+    const title = stream.title || (stream.channelData ? stream.channelData.title : '');
+    const description = stream.description || (stream.channelData ? stream.channelData.description : '');
+    
+    // Create a unique key using channelId, title and description
+    const key = `${channelId}|${title}|${description}`.trim();
+    
+    // Only add if we haven't seen this key before (keeping the newest due to sort order)
+    if (!uniqueStreams.has(key)) {
+      uniqueStreams.set(key, stream);
+    }
+  });
+  
+  // Convert map values back to array
+  return Array.from(uniqueStreams.values());
+}
 function processStreamData(data) {
     if (!Array.isArray(data)) {
         console.error('Data is not an array');
@@ -1441,14 +1479,15 @@ function processStreamData(data) {
         }
     });
     
-    const streams = data.filter(item =>
+    let streams = data.filter(item =>
         ((item.event === 'tv.stageten.plugin-commerce.output.live' ||
           item.event === 'tv.stageten.plugin-commerce.output.stopped') &&
         item.properties &&
         item.properties.watchUrl) ||
         (item.shopName && item.watchUrl)
     );
-    
+    streams = filterDuplicateStreams(streams);
+
     const currentTime = Date.now();
     const fourHoursInMs = 4 * 60 * 60 * 1000;
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
