@@ -1570,6 +1570,35 @@ function processStreamData(data) {
             streamStatus = 'ended';
         }
         
+        // Extract start and end times
+        let startTime = stream.startTime || properties.start_time || null;
+        let endTime = stream.endTime || properties.end_time || null;
+        
+        // Convert string values to numbers if needed
+        if (startTime && typeof startTime === 'string') {
+            startTime = parseInt(startTime, 10) || new Date(startTime).getTime();
+        }
+        
+        if (endTime && typeof endTime === 'string') {
+            endTime = parseInt(endTime, 10) || new Date(endTime).getTime();
+        }
+        
+        // Calculate duration
+        let duration = stream.duration || properties.duration || null;
+        if (!duration && startTime && endTime) {
+            duration = endTime - startTime;
+        }
+        
+        // For live streams without start time, estimate from timestamp
+        if (streamStatus === 'live' && !startTime) {
+            startTime = timestamp;
+        }
+        
+        // For ended streams without end time, use timestamp as end time
+        if (streamStatus === 'ended' && !endTime) {
+            endTime = timestamp;
+        }
+        
         return {
             shopName: properties.shopName || stream.shopName || "Stage TEN Shop",
             shopDomain: properties.shopDomain || stream.shopDomain || "",
@@ -1579,9 +1608,9 @@ function processStreamData(data) {
             timestamp: timestamp,
             streamStatus: stream.streamStatus || streamStatus,
             timeAgo: formatTimeAgo(timestamp),
-            startTime: stream.startTime || formatStartTime(timestamp),
-            endTime: stream.endTime || null,
-            duration: stream.duration || null,
+            startTime: startTime,
+            endTime: endTime,
+            duration: duration,
             email: properties.email || stream.email || "",
             channelId: stream.channelId || (properties.watchUrl ? properties.watchUrl.split('/').pop() : null),
             broadcastId: stream.broadcastId || "",
@@ -1621,35 +1650,36 @@ function processStreamData(data) {
     });
 }
 function formatTimeAgo(timestamp) {
-    const now = Date.now();
-    const diffInSeconds = Math.floor((now - timestamp) / 1000);
-    if (diffInSeconds < 0) {
-        const absDiff = Math.abs(diffInSeconds);
-        if (absDiff < 60) return 'Starting soon';
-        if (absDiff < 3600) return `Starts in ${Math.floor(absDiff / 60)}m`;
-        if (absDiff < 86400) return `Starts in ${Math.floor(absDiff / 3600)}h`;
-        return `Starts on ${new Date(timestamp).toLocaleDateString()}`;
-    }
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 14400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 86400) return 'Recent';
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  const now = Date.now();
+  const diffInSeconds = Math.floor((now - timestamp) / 1000);
+  
+  if (diffInSeconds < 0) {
+    const absDiff = Math.abs(diffInSeconds);
+    if (absDiff < 60) return 'Starting soon';
+    if (absDiff < 3600) return `Starts in ${Math.floor(absDiff / 60)}m`;
+    if (absDiff < 86400) return `Starts in ${Math.floor(absDiff / 3600)}h`;
+    return `Starts on ${new Date(timestamp).toLocaleDateString()}`;
+  }
+  
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  return `${Math.floor(diffInSeconds / 86400)}d ago`;
 }
 function formatStartTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const isToday = date.getDate() === now.getDate() &&
-                   date.getMonth() === now.getMonth() &&
-                   date.getFullYear() === now.getFullYear();
-    let formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    if (isToday) {
-        return `Today at ${formattedTime}`;
-    } else {
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const dayName = days[date.getDay()];
-        return `${dayName} at ${formattedTime}`;
-    }
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isToday = date.getDate() === now.getDate() &&
+                 date.getMonth() === now.getMonth() &&
+                 date.getFullYear() === now.getFullYear();
+  let formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  if (isToday) {
+    return `Today at ${formattedTime}`;
+  } else {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayName = days[date.getDay()];
+    return `${dayName} at ${formattedTime}`;
+  }
 }
 async function fetchStageTENChannelData(channelId) {
   try {
@@ -1823,27 +1853,29 @@ function createStreamCard(stream, index) {
       </svg>
     </div>`;
   }
-  
-  // Create status badge based on stream status
-  let statusBadge = '';
+   let statusBadge = '';
   let viewerDisplay = '';
-  
+  let streamTimeInfo = '';
+
   if (stream.streamStatus === 'live') {
+    // Calculate how long the stream has been live
+    const liveTime = stream.startTime ? formatDuration(Date.now() - stream.startTime) : '';
+    
     statusBadge = `
     <div class="live-indicator">
         <span class="live-dot"></span>
         LIVE
     </div>`;
     viewerDisplay = `${viewerCount} watching`;
-  } else if (stream.streamStatus === 'ended' || stream.streamStatus === 'vod') {
-    // Show duration if available
-    let durationText = stream.timeAgo || 'Recorded';
-    if (stream.duration) {
-      const durationSec = Math.floor(stream.duration / 1000);
-      const minutes = Math.floor(durationSec / 60);
-      const seconds = durationSec % 60;
-      durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (liveTime) {
+    //  streamTimeInfo = `<div class="stream-duration-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">Live for ${liveTime}</div>`;
     }
+  } else if (stream.streamStatus === 'ended' || stream.streamStatus === 'vod') {
+    // For ended streams, show duration and when it ended
+    const durationText = stream.duration ? formatDuration(stream.duration) : '';
+    const endedTimeAgo = stream.endTime ? formatTimeAgo(stream.endTime) : 
+                         (stream.timestamp ? formatTimeAgo(stream.timestamp) : '');
     
     statusBadge = `
     <div class="live-indicator" style="background: var(--text-muted);">
@@ -1852,8 +1884,25 @@ function createStreamCard(stream, index) {
         </svg>
         ${stream.vod ? 'VOD' : 'REPLAY'}
     </div>`;
-    viewerDisplay = durationText;
+    
+    // Always show both values if available
+    if (durationText && endedTimeAgo) {
+      viewerDisplay = `${durationText} · ${endedTimeAgo}`;
+     // streamTimeInfo = `<div class="stream-duration-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">${durationText}</div>`;
+    } else if (durationText) {
+      viewerDisplay = durationText;
+      //streamTimeInfo = `<div class="stream-duration-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">${durationText}</div>`;
+    } else if (endedTimeAgo) {
+      viewerDisplay = endedTimeAgo;
+     // streamTimeInfo = `<div class="stream-duration-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">${endedTimeAgo}</div>`;
+    } else {
+      viewerDisplay = 'Recorded';
+    }
   } else {
+    // Upcoming stream
+    const startTime = stream.startTime ? formatStartTime(stream.startTime) : '';
+    const startingIn = stream.startTime ? formatTimeAgo(stream.startTime) : '';
+    
     statusBadge = `
     <div class="live-indicator" style="background: var(--primary);">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1863,7 +1912,12 @@ function createStreamCard(stream, index) {
         </svg>
         SOON
     </div>`;
-    viewerDisplay = stream.startTime || 'Upcoming';
+    
+    viewerDisplay = startingIn || 'Upcoming';
+    
+    if (startTime) {
+     // streamTimeInfo = `<div class="stream-duration-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">${startTime}</div>`;
+    }
   }
   
   // Link to user's social profiles if available from channelData
@@ -1887,20 +1941,21 @@ function createStreamCard(stream, index) {
 
   return `
   <div class="stream-card" data-niche="${category.toLowerCase()}" data-local="${isLocalToUser}" onclick="window.open('${targetUrl}', '_blank')" style="cursor: pointer;">
-    <div class="stream-thumbnail">
-      <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
-      ${statusBadge}
-      ${isLocalToUser ? `<div class="canadian-badge" style="display: block;"></div>` : ''}
-      <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' || stream.streamStatus === 'vod' ? 'Watch Replay' : 'Starting Soon')}</div>
-      <div class="viewer-count">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-        ${viewerDisplay}
-      </div>
-      ${qualityBadge}
-      <div class="products-preview">
+   <div class="stream-thumbnail">
+	  <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
+	  ${statusBadge}
+	  ${isLocalToUser ? `<div class="canadian-badge" style="display: block;"></div>` : ''}
+	  <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' || stream.streamStatus === 'vod' ? 'Watch Replay' : 'Starting Soon')}</div>
+	  <div class="viewer-count">
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+		  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+		  <circle cx="12" cy="12" r="3"></circle>
+		</svg>
+		${viewerDisplay}
+	  </div>
+	  ${qualityBadge}
+	  ${streamTimeInfo}
+	  <div class="products-preview">
         <div class="product-thumbnails">
           <div class="product-thumb">
             <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product">
