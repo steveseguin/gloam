@@ -1415,6 +1415,8 @@
         }
     ];
 }
+
+
 function filterDuplicateStreams(streams) {
   if (!Array.isArray(streams)) {
     console.error('Input is not an array');
@@ -1433,7 +1435,8 @@ function filterDuplicateStreams(streams) {
   
   // Keep only the most recent stream for each channelId
   sortedStreams.forEach(stream => {
-    const channelId = stream.channelId;
+    const channelId = stream.channelId || 
+                     (stream.watchUrl ? stream.watchUrl.split('/').pop() : null);
     
     // Skip entries without channelId
     if (!channelId) return;
@@ -1447,12 +1450,32 @@ function filterDuplicateStreams(streams) {
     // Only add if we haven't seen this key before (keeping the newest due to sort order)
     if (!uniqueStreams.has(key)) {
       uniqueStreams.set(key, stream);
+    } else {
+      // If we have a newer stream with more information, use that one
+      const existingStream = uniqueStreams.get(key);
+      
+      // Check if this stream has more info than the existing one
+      let hasMoreInfo = false;
+      if (!existingStream.channelData && stream.channelData) hasMoreInfo = true;
+      if (!existingStream.resolution && stream.resolution) hasMoreInfo = true;
+      if (!existingStream.frameRate && stream.frameRate) hasMoreInfo = true;
+      if (!existingStream.avatarUrl && stream.avatarUrl) hasMoreInfo = true;
+      
+      if (hasMoreInfo) {
+        uniqueStreams.set(key, {
+          ...existingStream,
+          ...stream,
+          // Preserve the timestamp from the newest stream to maintain sort order
+          timestamp: existingStream.timestamp
+        });
+      }
     }
   });
   
   // Convert map values back to array
   return Array.from(uniqueStreams.values());
 }
+
 function processStreamData(data) {
     if (!Array.isArray(data)) {
         console.error('Data is not an array');
@@ -1472,7 +1495,9 @@ function processStreamData(data) {
             (typeof item.timestamp === 'number' ? item.timestamp : new Date(item.timestamp).getTime()) : 
             (item.originalTimestamp ? new Date(item.originalTimestamp).getTime() : Date.now());
         
-        const isEnded = item.event === 'tv.stageten.plugin-commerce.output.stopped';
+        const isEnded = item.streamStatus === 'ended' || 
+                       item.event === 'tv.stageten.plugin-commerce.output.stopped' || 
+                       item.event === 'Output Stop';
         
         if (!streamStatusMap.has(watchUrl) || streamStatusMap.get(watchUrl).timestamp < timestamp) {
             streamStatusMap.set(watchUrl, { timestamp, isEnded });
@@ -1481,10 +1506,10 @@ function processStreamData(data) {
     
     let streams = data.filter(item =>
         ((item.event === 'tv.stageten.plugin-commerce.output.live' ||
-          item.event === 'tv.stageten.plugin-commerce.output.stopped') &&
-        item.properties &&
-        item.properties.watchUrl) ||
-        (item.shopName && item.watchUrl)
+          item.event === 'tv.stageten.plugin-commerce.output.stopped' ||
+          item.event === 'Output Stop' ||
+          item.streamStatus) &&
+        (item.properties && item.properties.watchUrl || item.watchUrl))
     );
     streams = filterDuplicateStreams(streams);
 
@@ -1510,15 +1535,21 @@ function processStreamData(data) {
         
         // Check if this stream has a known ended status
         const latestStatus = watchUrl ? streamStatusMap.get(watchUrl) : null;
-        const isExplicitlyEnded = latestStatus && latestStatus.isEnded;
+        const isExplicitlyEnded = latestStatus && latestStatus.isEnded || 
+                                  stream.streamStatus === 'ended' || 
+                                  stream.event === 'Output Stop';
         
         let streamStatus;
         
         if (isExplicitlyEnded) {
             streamStatus = 'ended';
-        } else if (stream.isLive === true || (stream.channelData && stream.channelData.isLive === true)) {
+        } else if (stream.streamStatus === 'live' || stream.isLive === true || 
+                   (stream.channelData && stream.channelData.isLive === true)) {
             streamStatus = 'live';
-        } else if (stream.isLive === false || (stream.channelData && stream.channelData.isLive === false)) {
+        } else if (stream.streamStatus === 'vod') {
+            streamStatus = 'ended';
+        } else if (stream.streamStatus === 'upcoming' || stream.isLive === false || 
+                  (stream.channelData && stream.channelData.isLive === false)) {
             if (timeDiff > 0) {
                 streamStatus = 'ended';
             } else {
@@ -1543,22 +1574,36 @@ function processStreamData(data) {
             shopDomain: properties.shopDomain || stream.shopDomain || "",
             shopUrl: properties.shopUrl || stream.shopUrl || "",
             watchUrl: properties.watchUrl || stream.watchUrl || "",
+            displayUrl: properties.displayUrl || stream.displayUrl || "",
             timestamp: timestamp,
-            streamStatus: streamStatus,
+            streamStatus: stream.streamStatus || streamStatus,
             timeAgo: formatTimeAgo(timestamp),
-            startTime: formatStartTime(timestamp),
+            startTime: stream.startTime || formatStartTime(timestamp),
+            endTime: stream.endTime || null,
+            duration: stream.duration || null,
             email: properties.email || stream.email || "",
             channelId: stream.channelId || (properties.watchUrl ? properties.watchUrl.split('/').pop() : null),
-            isCanadian: (properties.shopDomain || stream.shopDomain || "").includes('.ca') ||
+            broadcastId: stream.broadcastId || "",
+            resolution: stream.resolution || "",
+            frameRate: stream.frameRate || "",
+            transcode: stream.transcode || false,
+            vod: stream.vod || false,
+            hasStore: stream.hasStore || false,
+            isCanadian: stream.isCanadian || 
+                       (properties.shopDomain || stream.shopDomain || "").includes('.ca') ||
                        (properties.shopName || stream.shopName || "").toLowerCase().includes('canadian') ||
                        (properties.email || stream.email || "").toLowerCase().includes('.ca'),
-            title: stream.title || properties.title,
-            description: stream.description || properties.description,
-            thumbnailUrl: stream.thumbnailUrl,
-            avatarUrl: stream.avatarUrl,
-            displayName: stream.displayName,
-            channelData: stream.channelData,
-            products: stream.products || []
+            title: stream.title || (stream.channelData ? stream.channelData.title : null) || properties.title || "",
+            description: stream.description || (stream.channelData ? stream.channelData.description : null) || properties.description || "",
+            thumbnailUrl: stream.thumbnailUrl || (stream.channelData ? stream.channelData.splashImageUrl : null) || "",
+            avatarUrl: stream.avatarUrl || (stream.channelData && stream.channelData.user ? stream.channelData.user.avatarUrl : null) || "",
+            displayName: stream.displayName || (stream.channelData && stream.channelData.user ? stream.channelData.user.displayName : null) || "",
+            channelData: stream.channelData || null,
+            products: stream.products || [],
+            isShopOwner: stream.isShopOwner || false,
+            shopAppUrl: stream.shopAppUrl || "",
+            liveSubtitles: stream.liveSubtitles || false,
+            affiliateInfo: stream.affiliateInfo || null
         };
     })
     .filter(stream => stream.streamStatus !== 'filtered')
@@ -1606,215 +1651,301 @@ function formatStartTime(timestamp) {
     }
 }
 async function fetchStageTENChannelData(channelId) {
-    try {
-        if (!channelId) return null;
-        const response = await fetch(`https://api.stageten.tv/v1/channels/${channelId}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.log(`Channel ${channelId} not found`);
-                return null;
-            }
-            throw new Error(`API error: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching StageTEN channel data:', error);
+  try {
+    if (!channelId) return null;
+    
+    // Try the API first
+    const response = await fetch(`https://api.stageten.tv/v1/channels/${channelId}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`Channel ${channelId} not found`);
         return null;
+      }
+      throw new Error(`API error: ${response.status}`);
     }
-}
-async function enhanceStreamWithStageTENData(stream) {
-    if (!stream.watchUrl) return stream;
+    
+    const data = await response.json();
+    return data;
+    
+  } catch (error) {
+    console.error('Error fetching StageTEN channel data:', error);
+    
+    // Fallback: Try our own channel scraper
     try {
-        if (stream.channelData && stream.channelData.id && stream.channelData.user) {
-            return {
-                ...stream,
-                title: stream.channelData.title || stream.title || stream.shopName,
-                description: stream.channelData.description || stream.description || '',
-                thumbnailUrl: stream.channelData.splashImageUrl || stream.thumbnailUrl || '',
-                avatarUrl: stream.channelData.user?.avatarUrl || stream.avatarUrl || '',
-                displayName: stream.channelData.user?.displayName || stream.displayName || stream.shopName,
-                socialLinks: stream.channelData.user?.links || []
-            };
-        }
-        const channelId = stream.channelId || stream.watchUrl.split('/').pop();
-        if (!channelId) return stream;
-        const channelData = await fetchStageTENChannelData(channelId);
-        if (!channelData) {
-            return {
-                ...stream,
-                title: stream.title || `${stream.shopName} - Live Shopping Experience`,
-                description: stream.description || 'Join us for exclusive deals and product showcases!',
-                thumbnailUrl: stream.thumbnailUrl || `https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`,
-                avatarUrl: stream.avatarUrl,
-                displayName: stream.displayName || stream.shopName
-            };
-        }
-        let products = [];
-        try {
-            if (stream.shopDomain && stream.shopDomain.includes('myshopify.com')) {
-                products = [
-                    {
-                        id: `product-${channelId}-1`,
-                        title: 'Featured Product 1',
-                        price: '$' + (Math.floor(Math.random() * 100) + 20),
-                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`
-                    },
-                    {
-                        id: `product-${channelId}-2`,
-                        title: 'Featured Product 2',
-                        price: '$' + (Math.floor(Math.random() * 100) + 20),
-                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 1}`
-                    },
-                    {
-                        id: `product-${channelId}-3`,
-                        title: 'Featured Product 3',
-                        price: '$' + (Math.floor(Math.random() * 100) + 20),
-                        imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 2}`
-                    }
-                ];
-            }
-        } catch (error) {
-            console.error('Error fetching Shopify products:', error);
-        }
-        return {
-            ...stream,
-            channelData: channelData,
-            title: channelData.title || stream.title || stream.shopName,
-            description: channelData.description || stream.description || '',
-            thumbnailUrl: channelData.splashImageUrl || stream.thumbnailUrl || '',
-            avatarUrl: channelData.user?.avatarUrl || stream.avatarUrl || '',
-            displayName: channelData.user?.displayName || stream.displayName || stream.shopName,
-            socialLinks: channelData.user?.links || [],
-            products: products
-        };
+      const response = await fetch(`https://stageten-gloam.vdo.workers.dev/channel?url=https://play.stageten.tv/channel/${channelId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (fallbackError) {
+      console.error('Error with channel scraper fallback:', fallbackError);
+    }
+    
+    return null;
+  }
+}
+
+async function enhanceStreamWithStageTENData(stream) {
+  if (!stream.watchUrl) return stream;
+  
+  try {
+    // If we already have channel data, use it
+    if (stream.channelData && stream.channelData.id && stream.channelData.user) {
+      return {
+        ...stream,
+        title: stream.channelData.title || stream.title || stream.shopName,
+        description: stream.channelData.description || stream.description || '',
+        thumbnailUrl: stream.channelData.splashImageUrl || stream.thumbnailUrl || '',
+        avatarUrl: stream.channelData.user?.avatarUrl || stream.avatarUrl || '',
+        displayName: stream.channelData.user?.displayName || stream.displayName || stream.shopName,
+        socialLinks: stream.channelData.user?.links || []
+      };
+    }
+    
+    // Get channelId and fetch data
+    const channelId = stream.channelId || stream.watchUrl.split('/').pop();
+    if (!channelId) return stream;
+    
+    const channelData = await fetchStageTENChannelData(channelId);
+    
+    if (!channelData) {
+      return {
+        ...stream,
+        title: stream.title || `${stream.shopName} - Live Shopping Experience`,
+        description: stream.description || 'Join us for exclusive deals and product showcases!'
+      };
+    }
+    
+    // Generate mock products if we have a Shopify domain and hasStore is true
+    let products = [];
+    try {
+      if (stream.hasStore && stream.shopDomain && stream.shopDomain.includes('myshopify.com')) {
+        // Mock products - in a real app you'd fetch from Shopify
+        products = [
+          {
+            id: `product-${channelId}-1`,
+            title: 'Featured Product 1',
+            price: '$' + (Math.floor(Math.random() * 100) + 20),
+            imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`
+          },
+          {
+            id: `product-${channelId}-2`,
+            title: 'Featured Product 2',
+            price: '$' + (Math.floor(Math.random() * 100) + 20),
+            imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 1}`
+          },
+          {
+            id: `product-${channelId}-3`,
+            title: 'Featured Product 3',
+            price: '$' + (Math.floor(Math.random() * 100) + 20),
+            imageUrl: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000) + 2}`
+          }
+        ];
+      }
     } catch (error) {
-        console.error('Error enhancing stream with StageTEN data:', error);
-        return stream;
+      console.error('Error creating mock products:', error);
     }
+    
+    return {
+      ...stream,
+      channelData: channelData,
+      title: channelData.title || stream.title || stream.shopName,
+      description: channelData.description || stream.description || '',
+      thumbnailUrl: channelData.splashImageUrl || stream.thumbnailUrl || '',
+      avatarUrl: channelData.user?.avatarUrl || stream.avatarUrl || '',
+      displayName: channelData.user?.displayName || stream.displayName || stream.shopName,
+      socialLinks: channelData.user?.links || [],
+      products: products
+    };
+  } catch (error) {
+    console.error('Error enhancing stream with StageTEN data:', error);
+    return stream;
+  }
 }
+
+function formatDuration(durationMs) {
+  if (!durationMs) return '';
+  
+  const seconds = Math.floor(durationMs / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (minutes < 60) {
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  return `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 function createStreamCard(stream, index) {
-    const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
-    const viewerCounts = ['1.2K', '956', '2.4K', '1.8K', '3.1K', '875'];
-    const discounts = ['40% OFF', 'BOGO', 'Free Shipping', '20% OFF', 'Buy 2 Get 1'];
-    const category = categories[index % categories.length];
-    const viewerCount = viewerCounts[index % viewerCounts.length];
-    const discount = discounts[index % discounts.length];
-    const isLocalToUser = stream.isLocalToUser || false;
-    const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
-    const description = stream.description || '';
-    const thumbnailUrl = stream.thumbnailUrl || `https://picsum.photos/800/400?random=${index}`;
-    const avatarUrl = stream.avatarUrl;
-    const displayName = stream.displayName || stream.shopName;
-    const avatarInitials = stream.shopName.charAt(0) + (stream.shopName.split(' ')[1] ? stream.shopName.split(' ')[1].charAt(0) : '');
-    const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
-    const location = isLocalToUser ? ` - ${canadianCities[index % canadianCities.length]}` : '';
-    let statusBadge = '';
-    let viewerDisplay = '';
-    if (stream.streamStatus === 'live') {
-        statusBadge = `
-        <div class="live-indicator">
-            <span class="live-dot"></span>
-            LIVE
-        </div>`;
-        viewerDisplay = `${viewerCount} watching`;
-    } else if (stream.streamStatus === 'ended') {
-        statusBadge = `
-        <div class="live-indicator" style="background: var(--text-muted);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <path d="M5 3l14 9-14 9V3z"></path>
-            </svg>
-            REPLAY
-        </div>`;
-        viewerDisplay = stream.timeAgo;
-    } else {
-        statusBadge = `
-        <div class="live-indicator" style="background: var(--primary);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="6" x2="12" y2="12"></line>
-                <line x1="12" y1="12" x2="16" y2="16"></line>
-            </svg>
-            SOON
-        </div>`;
-        viewerDisplay = stream.startTime;
+  const categories = ['Fashion', 'Beauty', 'Luxury', 'Skincare', 'Street Style', 'Makeup'];
+  const viewerCounts = ['1.2K', '956', '2.4K', '1.8K', '3.1K', '875'];
+  const discounts = ['40% OFF', 'BOGO', 'Free Shipping', '20% OFF', 'Buy 2 Get 1'];
+  
+  const category = categories[index % categories.length];
+  const viewerCount = viewerCounts[index % viewerCounts.length];
+  const discount = discounts[index % discounts.length];
+  const isLocalToUser = stream.isLocalToUser || false;
+  
+  // Use stream data if available, otherwise fallback
+  const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
+  const description = stream.description || '';
+  const thumbnailUrl = stream.thumbnailUrl || `https://picsum.photos/800/400?random=${index}`;
+  const avatarUrl = stream.avatarUrl;
+  const displayName = stream.displayName || stream.shopName;
+  const avatarInitials = displayName.charAt(0) + (displayName.split(' ')[1] ? displayName.split(' ')[1].charAt(0) : '');
+  
+  const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
+  const location = isLocalToUser ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+  
+
+  // Stream quality badge with improved orientation icon
+  let qualityBadge = '';
+  if (stream.resolution) {
+    const isPortrait = stream.resolution.includes('x') && 
+                     stream.resolution.split('x')[0] < stream.resolution.split('x')[1];
+    
+    qualityBadge = `
+    <div class="quality-badge" style="position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 3px 6px 0px 6px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px);">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="${isPortrait ? '5' : '2'}" y="${isPortrait ? '2' : '5'}" width="${isPortrait ? '6' : '12'}" height="${isPortrait ? '12' : '6'}" rx="1" />
+      </svg>
+    </div>`;
+  }
+  
+  // Create status badge based on stream status
+  let statusBadge = '';
+  let viewerDisplay = '';
+  
+  if (stream.streamStatus === 'live') {
+    statusBadge = `
+    <div class="live-indicator">
+        <span class="live-dot"></span>
+        LIVE
+    </div>`;
+    viewerDisplay = `${viewerCount} watching`;
+  } else if (stream.streamStatus === 'ended' || stream.streamStatus === 'vod') {
+    // Show duration if available
+    let durationText = stream.timeAgo || 'Recorded';
+    if (stream.duration) {
+      const durationSec = Math.floor(stream.duration / 1000);
+      const minutes = Math.floor(durationSec / 60);
+      const seconds = durationSec % 60;
+      durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-    const productsHtml = stream.products && stream.products.length > 0 ?
-        stream.products.map((product, pIndex) => `
-            <div class="product-thumb" data-product-id="${product.id}">
-                <img src="${product.imageUrl}" alt="${product.title}"
-                    onclick="showProductZoom('${product.imageUrl}', '${product.title}', '${product.price}')">
-                ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
-            </div>
-        `).join('') :
-        `
-        <div class="product-thumb">
-            <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product"
-                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 1}', 'Featured Product', '$${Math.floor(Math.random() * 100) + 20}')">
+    
+    statusBadge = `
+    <div class="live-indicator" style="background: var(--text-muted);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M5 3l14 9-14 9V3z"></path>
+        </svg>
+        ${stream.vod ? 'VOD' : 'REPLAY'}
+    </div>`;
+    viewerDisplay = durationText;
+  } else {
+    statusBadge = `
+    <div class="live-indicator" style="background: var(--primary);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="6" x2="12" y2="12"></line>
+            <line x1="12" y1="12" x2="16" y2="16"></line>
+        </svg>
+        SOON
+    </div>`;
+    viewerDisplay = stream.startTime || 'Upcoming';
+  }
+  
+  // Link to user's social profiles if available from channelData
+  let socialLinksHtml = '';
+  if (stream.channelData && stream.channelData.user && stream.channelData.user.links && stream.channelData.user.links.length > 0) {
+    const links = stream.channelData.user.links.slice(0, 2); // Show at most 2 links
+    socialLinksHtml = `
+    <div class="stream-social-links" style="display: flex; gap: 8px; margin-top: 4px;">
+      ${links.map(link => `
+        <a href="${link.url}" target="_blank" onclick="event.stopPropagation();" style="font-size: 12px; color: var(--primary);">
+          ${link.title}
+        </a>
+      `).join('')}
+    </div>`;
+  }
+
+  // Choose the appropriate URL to visit
+  const targetUrl = stream.displayUrl || stream.watchUrl;
+  const viewText = stream.streamStatus === 'live' ? 'Watch Live →' : 
+                  (stream.streamStatus === 'ended' || stream.streamStatus === 'vod' ? 'Watch Replay →' : 'Set Reminder →');
+
+  return `
+  <div class="stream-card" data-niche="${category.toLowerCase()}" data-local="${isLocalToUser}" onclick="window.open('${targetUrl}', '_blank')" style="cursor: pointer;">
+    <div class="stream-thumbnail">
+      <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
+      ${statusBadge}
+      ${isLocalToUser ? `<div class="canadian-badge" style="display: block;"></div>` : ''}
+      <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' || stream.streamStatus === 'vod' ? 'Watch Replay' : 'Starting Soon')}</div>
+      <div class="viewer-count">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        ${viewerDisplay}
+      </div>
+      ${qualityBadge}
+      <div class="products-preview">
+        <div class="product-thumbnails">
+          <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 1}" alt="Product">
             ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
-        </div>
-        <div class="product-thumb">
-            <img src="https://picsum.photos/100/100?random=${index * 3 + 2}" alt="Product"
-                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 2}', 'Trending Item', '$${Math.floor(Math.random() * 100) + 20}')">
-        </div>
-        <div class="product-thumb">
-            <img src="https://picsum.photos/100/100?random=${index * 3 + 3}" alt="Product"
-                onclick="showProductZoom('https://picsum.photos/800/800?random=${index * 3 + 3}', 'New Arrival', '$${Math.floor(Math.random() * 100) + 20}')">
+          </div>
+          <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 2}" alt="Product">
+          </div>
+          <div class="product-thumb">
+            <img src="https://picsum.photos/100/100?random=${index * 3 + 3}" alt="Product">
             ${isLocalToUser ? `<div class="canadian-product-badge" style="display: block;"></div>` : ''}
+          </div>
         </div>
-        `;
-    return `
-    <div class="stream-card" data-niche="${category.toLowerCase()}" data-local="${isLocalToUser}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
-        <div class="stream-thumbnail">
-            <img src="${thumbnailUrl}" alt="${stream.shopName}" onerror="this.src='https://picsum.photos/800/400?random=${Math.floor(Math.random() * 100)}'">
-            ${statusBadge}
-            ${isLocalToUser ? `<div class="canadian-badge" style="display: block;"></div>` : ''}
-            <div class="promotion-badge">${stream.streamStatus === 'live' ? discount : (stream.streamStatus === 'ended' ? 'Watch Replay' : stream.timeAgo)}</div>
-            <div class="viewer-count">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                ${viewerDisplay}
-            </div>
-            <div class="products-preview">
-                <div class="product-thumbnails">
-                    ${productsHtml}
-                </div>
-            </div>
-        </div>
-        <div class="stream-details">
-            <h3 class="stream-title">${title}</h3>
-            ${description ? `<p class="stream-description" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${description}</p>` : ''}
-            <div class="creator-info">
-                ${avatarUrl ?
-                    `<div class="creator-avatar" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` :
-                    `<div class="creator-avatar">${avatarInitials}</div>`
-                }
-                <span class="creator-name">${displayName}${location}</span>
-            </div>
-            <div class="stream-footer">
-                <span class="category-tag">${category}</span>
-                <div class="action-links" style="display:flex; gap:10px;">
-                    <a href="${stream.watchUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
-                        ${stream.streamStatus === 'live' ? 'Watch Live →' : (stream.streamStatus === 'ended' ? 'Watch Replay →' : 'Set Reminder →')}
-                    </a>
-                    ${stream.shopUrl ? `
-                    <a href="${stream.shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
-                        Shop →
-                    </a>
-                    ` : ''}
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-    `;
+    <div class="stream-details">
+      <h3 class="stream-title">${title}</h3>
+      ${description ? `<p class="stream-description" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${description}</p>` : ''}
+      <div class="creator-info">
+        ${avatarUrl ?
+          `<div class="creator-avatar" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` :
+          `<div class="creator-avatar">${avatarInitials}</div>`
+        }
+        <span class="creator-name">${displayName}${location}</span>
+      </div>
+      ${socialLinksHtml}
+      <div class="stream-footer">
+        <span class="category-tag">${category}</span>
+        <div class="action-links" style="display:flex; gap:10px;">
+          <a href="${targetUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();">
+            ${viewText}
+          </a>
+          ${stream.hasStore && stream.shopUrl ? `
+          <a href="${stream.shopUrl}" class="store-link" target="_blank" onclick="event.stopPropagation();" style="color:var(--accent);">
+            Shop →
+          </a>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
 }
+
+
+
 function createCreatorCard(stream, index) {
     const isLocalToUser = stream.isLocalToUser || false;
     const displayName = stream.displayName || stream.shopName;
@@ -1826,19 +1957,28 @@ function createCreatorCard(stream, index) {
     const category = categories[index % categories.length];
     const canadianCities = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'];
     const location = isLocalToUser ? ` - ${canadianCities[index % canadianCities.length]}` : '';
+    
+    // Use channelData.user.links if available
     let socialLinksHtml = '';
-    if (stream.socialLinks && stream.socialLinks.length > 0) {
+    const links = stream.channelData && stream.channelData.user && stream.channelData.user.links ? 
+                 stream.channelData.user.links : [];
+    
+    if (links.length > 0) {
         socialLinksHtml = `
         <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: center;">
-            ${stream.socialLinks.map(link => `
+            ${links.map(link => `
                 <a href="${link.url}" target="_blank" onclick="event.stopPropagation();" style="color: var(--primary); font-size: 12px;">
                     ${link.title}
                 </a>
             `).join('')}
         </div>`;
     }
+    
+    // Choose the appropriate URL to visit
+    const targetUrl = stream.displayUrl || stream.watchUrl;
+    
     return `
-    <div class="creator-card" data-local="${isLocalToUser}" onclick="window.open('${stream.watchUrl}', '_blank')" style="cursor: pointer;">
+    <div class="creator-card" data-local="${isLocalToUser}" onclick="window.open('${targetUrl}', '_blank')" style="cursor: pointer;">
         <div class="creator-card-header" style="position: relative;">
             ${avatarUrl ?
                 `<div class="creator-avatar-large" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` :
@@ -1862,13 +2002,14 @@ function createCreatorCard(stream, index) {
         ${socialLinksHtml}
         <div style="display: flex; gap: 8px; margin-top: 16px;">
             <button class="follow-button" onclick="event.stopPropagation();">Follow</button>
-            ${stream.shopUrl ? `
+            ${stream.hasStore && stream.shopUrl ? `
             <a href="${stream.shopUrl}" target="_blank" onclick="event.stopPropagation();" style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; border: 1px solid var(--primary); color: var(--primary); text-decoration: none; font-weight: 600;">Shop</a>
             ` : ''}
         </div>
     </div>
     `;
 }
+
 function getCountryInfo(countryCode) {
   const countryMap = {
     "US": { name: "United States", emoji: "🇺🇸", niceName: "American" },
@@ -2041,7 +2182,7 @@ function selectCountry(countryCode) {
 }
 async function fetchStreamData() {
     try {
-        const response = await fetch('https://young-grass-8d02.vdo.workers.dev/');
+        const response = await fetch('https://stageten-gloam.vdo.workers.dev/');
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
