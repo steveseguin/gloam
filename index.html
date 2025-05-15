@@ -843,6 +843,346 @@
 			font-weight: 600;
 			text-align: center;
 		}
+		
+		
+		
+		    body.mobile-view {
+      overflow: hidden;
+    }
+    
+    .mobile-feed-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--background);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .mobile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      z-index: 10;
+    }
+    
+    .mobile-logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .mobile-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .mobile-region-badge {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    
+    .mobile-search-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--background);
+    }
+    
+    .mobile-categories {
+      display: flex;
+      overflow-x: auto;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      z-index: 5;
+    }
+    
+    .mobile-categories::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .mobile-category {
+      padding: 6px 16px;
+      margin-right: 8px;
+      white-space: nowrap;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    
+    .mobile-category.active {
+      background: var(--gradient-primary);
+      color: white;
+    }
+    
+    .mobile-feed-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: y mandatory;
+      position: relative;
+    }
+    
+    .mobile-nav {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      height: 60px;
+      z-index: 10;
+    }
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      color: var(--text-muted);
+      font-size: 10px;
+      gap: 4px;
+    }
+    
+    .mobile-nav-item.active {
+      color: var(--primary);
+    }
+    
+    .mobile-nav-item.go-live-nav {
+      color: var(--accent);
+    }
+    
+    .mobile-nav-item svg {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .mobile-stream-card {
+      height: calc(100vh - 182px);
+      scroll-snap-align: start;
+      position: relative;
+      border-bottom: 4px solid var(--border);
+    }
+    
+    .mobile-stream-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      position: relative;
+    }
+    
+    .mobile-stream-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      color: white;
+    }
+    
+    .mobile-stream-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-stream-creator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .mobile-creator-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      border: 2px solid white;
+    }
+    
+    .mobile-stream-actions {
+      position: absolute;
+      right: 16px;
+      bottom: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .mobile-action-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      gap: 4px;
+    }
+    
+    .mobile-action-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .mobile-action-count {
+      font-size: 12px;
+    }
+    
+    .mobile-products-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    
+    .mobile-products-row::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .mobile-product-item {
+      min-width: 120px;
+      height: 60px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    
+    .mobile-product-image {
+      width: 44px;
+      height: 44px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .mobile-product-info {
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .mobile-product-title {
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .mobile-product-price {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .mobile-stream-status {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .mobile-status-live {
+      background: var(--danger);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+    
+    .mobile-status-ended {
+      background: var(--text-muted);
+      color: white;
+    }
+    
+    .mobile-status-upcoming {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .mobile-stream-time {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+    }
+    
+    .mobile-stream-cta {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    
+    .stream-loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .stream-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     </style>
 </head>
 <body>
@@ -1416,8 +1756,442 @@
         }
     ];
 }
+// Add this code at the end of the body, before the closing script tag
+function initMobileExperience() {
+  // Check if we're on a mobile device
+  const isMobile = window.innerWidth <= 768;
+  
+  if (!isMobile) return;
+  
+  // Create mobile UI container
+  const mobileUI = document.createElement('div');
+  mobileUI.id = 'mobile-feed';
+  mobileUI.className = 'mobile-feed-container';
+  
+  // Hide regular content
+  document.querySelector('.main-content').style.display = 'none';
+  document.querySelector('footer').style.display = 'none';
+  
+  // Create mobile header
+  const mobileHeader = document.createElement('div');
+  mobileHeader.className = 'mobile-header';
+  mobileHeader.innerHTML = `
+    <div class="mobile-logo">
+      <img style="height:32px;" src="logo.png" />
+    </div>
+    <div class="mobile-actions">
+      <div class="region-badge mobile-region-badge">
+        <span>🌎</span>
+        <span>Global</span>
+      </div>
+      <div class="mobile-search-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+      </div>
+    </div>
+  `;
+  
+  // Create mobile feed
+  const mobileFeed = document.createElement('div');
+  mobileFeed.className = 'mobile-feed-scroll';
+  
+  // Create mobile navigation
+  const mobileNav = document.createElement('div');
+  mobileNav.className = 'mobile-nav';
+  mobileNav.innerHTML = `
+    <div class="mobile-nav-item active">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>Home</span>
+    </div>
+    <div class="mobile-nav-item">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="22" y1="12" x2="18" y2="12"></line>
+        <line x1="6" y1="12" x2="2" y2="12"></line>
+        <line x1="12" y1="6" x2="12" y2="2"></line>
+        <line x1="12" y1="22" x2="12" y2="18"></line>
+      </svg>
+      <span>Explore</span>
+    </div>
+    <div class="mobile-nav-item go-live-nav">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M23 7l-7 5 7 5V7z"></path>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+      </svg>
+      <span>Go Live</span>
+    </div>
+    <div class="mobile-nav-item">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <span>Saved</span>
+    </div>
+    <div class="mobile-nav-item">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <span>Profile</span>
+    </div>
+  `;
+  
+  // Create mobile categories
+  const mobileCategories = document.createElement('div');
+  mobileCategories.className = 'mobile-categories';
+  mobileCategories.innerHTML = `
+    <div class="mobile-category active">For You</div>
+    <div class="mobile-category">Beauty</div>
+    <div class="mobile-category">Fashion</div>
+    <div class="mobile-category">Luxury</div>
+    <div class="mobile-category">Trending</div>
+  `;
+  
+  // Append elements
+  mobileUI.appendChild(mobileHeader);
+  mobileUI.appendChild(mobileCategories);
+  mobileUI.appendChild(mobileFeed);
+  mobileUI.appendChild(mobileNav);
+  document.body.appendChild(mobileUI);
+  
+  // Load streams for mobile feed
+  loadMobileFeed();
+  
+  // Setup event listeners
+  setupMobileEventListeners();
+}
+function loadMobileFeed() {
+  const mobileFeed = document.querySelector('.mobile-feed-scroll');
+  if (!mobileFeed) return;
+  
+  mobileFeed.innerHTML = `
+    <div class="stream-loading-indicator">
+      <div class="stream-loading-spinner"></div>
+      <div>Loading streams...</div>
+    </div>
+  `;
+  
+  // Get streams from existing data or fetch new
+  fetchStreamData().then(async data => {
+    const streams = processStreamData(data || getFallbackData());
+    
+    // Get user's country
+    const userCountry = localStorage.getItem('selectedCountry') || 
+                        localStorage.getItem('userDetectedCountry') || 
+                        'GLOBAL';
+    
+    const enhancedStreams = await Promise.all(
+      streams.map(stream => enhanceStreamWithStageTENData(stream))
+    );
+    
+    // Sort streams: live first, then upcoming, then ended
+    enhancedStreams.sort((a, b) => {
+      const statusOrder = { live: 0, upcoming: 1, ended: 2 };
+      return statusOrder[a.streamStatus] - statusOrder[b.streamStatus];
+    });
+    
+    // Mark streams local to user
+    enhancedStreams.forEach(stream => {
+      stream.isLocalToUser = determineStreamCountry(stream, userCountry);
+    });
+    
+    // Clear loading indicator
+    mobileFeed.innerHTML = '';
+    
+    // Populate mobile feed
+    enhancedStreams.forEach((stream, index) => {
+      mobileFeed.appendChild(createMobileStreamCard(stream, index));
+    });
+    
+    // Setup intersection observer for autoplay/pause
+    setupStreamObserver();
+  });
+}
 
+function createMobileStreamCard(stream, index) {
+  const card = document.createElement('div');
+  card.className = 'mobile-stream-card';
+  card.dataset.status = stream.streamStatus;
+  
+  const thumbnailUrl = stream.thumbnailUrl || `https://picsum.photos/800/1200?random=${index}`;
+  const title = stream.title || `${stream.shopName} - Live Shopping Experience`;
+  const creator = stream.displayName || stream.shopName;
+  const avatarUrl = stream.avatarUrl;
+  const avatarInitials = creator.charAt(0) + (creator.split(' ')[1] ? creator.split(' ')[1].charAt(0) : '');
+  
+  // Status badges
+  let statusBadge = '';
+  if (stream.streamStatus === 'live') {
+    statusBadge = `
+      <div class="mobile-stream-status mobile-status-live">
+        <span style="width: 8px; height: 8px; background: white; border-radius: 50%;"></span>
+        LIVE
+      </div>
+    `;
+  } else if (stream.streamStatus === 'ended') {
+    statusBadge = `
+      <div class="mobile-stream-status mobile-status-ended">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 3l14 9-14 9V3z"></path>
+        </svg>
+        REPLAY
+      </div>
+    `;
+  } else {
+    statusBadge = `
+      <div class="mobile-stream-status mobile-status-upcoming">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="6" x2="12" y2="12"></line>
+          <line x1="12" y1="12" x2="16" y2="16"></line>
+        </svg>
+        SOON
+      </div>
+    `;
+  }
+  
+  // Stream time info
+  let timeInfo = '';
+  if (stream.streamStatus === 'live') {
+    const liveTime = stream.startTime ? formatDuration(Date.now() - stream.startTime) : '';
+    timeInfo = `
+      <div class="mobile-stream-time">
+        ${liveTime || stream.timeAgo || ''}
+      </div>
+    `;
+  } else if (stream.streamStatus === 'ended') {
+    const duration = stream.duration ? formatDuration(stream.duration) : '';
+    timeInfo = `
+      <div class="mobile-stream-time">
+        ${duration || stream.timeAgo || ''}
+      </div>
+    `;
+  } else {
+    timeInfo = `
+      <div class="mobile-stream-time">
+        ${stream.timeAgo || 'Coming Soon'}
+      </div>
+    `;
+  }
+  
+  // Mock products
+  const productCount = Math.floor(Math.random() * 3) + 2;
+  let productsHTML = '';
+  
+  for (let i = 0; i < productCount; i++) {
+    const productPrice = '$' + (Math.floor(Math.random() * 100) + 20);
+    productsHTML += `
+      <div class="mobile-product-item">
+        <img class="mobile-product-image" src="https://picsum.photos/100/100?random=${index * 10 + i}" alt="Product">
+        <div class="mobile-product-info">
+          <div class="mobile-product-title">Product ${i+1}</div>
+          <div class="mobile-product-price">${productPrice}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  card.innerHTML = `
+    <div class="mobile-stream-video" style="background-image: url('${thumbnailUrl}'); background-size: cover; background-position: center;">
+      ${stream.streamStatus === 'live' ? `
+        <video src="" poster="${thumbnailUrl}" muted loop playsinline></video>
+      ` : ''}
+      ${statusBadge}
+      ${timeInfo}
+      <div class="mobile-stream-actions">
+        <div class="mobile-action-button">
+          <div class="mobile-action-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <div class="mobile-action-count">${Math.floor(Math.random() * 500) + 100}</div>
+        </div>
+        <div class="mobile-action-button">
+          <div class="mobile-action-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+            </svg>
+          </div>
+          <div class="mobile-action-count">${Math.floor(Math.random() * 100) + 20}</div>
+        </div>
+        <div class="mobile-action-button">
+          <div class="mobile-action-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </div>
+          <div class="mobile-action-count">Share</div>
+        </div>
+      </div>
+      <div class="mobile-stream-overlay">
+        <div class="mobile-stream-title">${title}</div>
+        <div class="mobile-stream-creator">
+          ${avatarUrl ?
+            `<div class="mobile-creator-avatar" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>` :
+            `<div class="mobile-creator-avatar">${avatarInitials}</div>`
+          }
+          <div>
+            <div style="font-weight: 600;">${creator}</div>
+            <div style="font-size: 12px; opacity: 0.8;">${Math.floor(Math.random() * 500) + 100}K followers</div>
+          </div>
+          <button style="margin-left: auto; background: white; color: var(--primary); border: none; padding: 6px 12px; border-radius: 50px; font-weight: 600; font-size: 12px;">Follow</button>
+        </div>
+        <div class="mobile-products-row">
+          ${productsHTML}
+        </div>
+        <div style="margin-top: 16px;">
+          <button class="mobile-stream-cta">
+            ${stream.streamStatus === 'live' ? 'Shop Now' : (stream.streamStatus === 'ended' ? 'View Products' : 'Set Reminder')}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
 
+function setupStreamObserver() {
+  const streamCards = document.querySelectorAll('.mobile-stream-card');
+  const videos = document.querySelectorAll('.mobile-stream-video video');
+  
+  // Set up IntersectionObserver to handle video autoplay/pause
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const video = entry.target.querySelector('video');
+      if (entry.isIntersecting && video) {
+        // Try to play the video when it's in view
+        if (video.src === '') {
+          // For demo purposes, set source to a placeholder
+          try {
+            video.src = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            video.muted = true;
+            video.play().catch(error => console.log('Autoplay prevented:', error));
+          } catch (e) {
+            console.log('Video error:', e);
+          }
+        } else {
+          video.play().catch(e => console.log('Play error:', e));
+        }
+      } else if (video) {
+        video.pause();
+      }
+    });
+  }, { threshold: 0.7 }); // 70% visibility threshold
+  
+  streamCards.forEach(card => {
+    observer.observe(card);
+  });
+}
+
+function setupMobileEventListeners() {
+  // Mobile category selection
+  const categories = document.querySelectorAll('.mobile-category');
+  categories.forEach(category => {
+    category.addEventListener('click', () => {
+      categories.forEach(c => c.classList.remove('active'));
+      category.classList.add('active');
+      // Here we would filter the feed, but for demo we'll just reload
+      loadMobileFeed();
+    });
+  });
+  
+  // Mobile nav items
+  const navItems = document.querySelectorAll('.mobile-nav-item');
+  navItems.forEach((item, index) => {
+    item.addEventListener('click', () => {
+      if (item.classList.contains('go-live-nav')) {
+        window.open('https://stageten.tv/creators', '_blank');
+        return;
+      }
+      
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      
+      // Handle navigation - for demo just reload feed on most tabs
+      if (index !== 0) {
+        alert('This section is under development');
+        navItems[0].classList.add('active');
+        item.classList.remove('active');
+      }
+    });
+  });
+  
+  // Mobile region badge
+  const regionBadge = document.querySelector('.mobile-region-badge');
+  if (regionBadge) {
+    regionBadge.addEventListener('click', () => {
+      toggleDropdown();
+    });
+  }
+  
+  // Search icon
+  const searchIcon = document.querySelector('.mobile-search-icon');
+  if (searchIcon) {
+    searchIcon.addEventListener('click', () => {
+      alert('Search feature coming soon');
+    });
+  }
+  
+  // Product items
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.mobile-product-item')) {
+      const product = e.target.closest('.mobile-product-item');
+      const image = product.querySelector('.mobile-product-image');
+      const title = product.querySelector('.mobile-product-title');
+      const price = product.querySelector('.mobile-product-price');
+      
+      alert(`Product: ${title.textContent}\nPrice: ${price.textContent}`);
+    }
+  });
+  
+  // Stream CTAs
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('mobile-stream-cta')) {
+      const status = e.target.closest('.mobile-stream-card').dataset.status;
+      if (status === 'live') {
+        alert('Taking you to the shop now');
+      } else if (status === 'ended') {
+        alert('Showing product details');
+      } else {
+        alert('Reminder set for this stream');
+      }
+    }
+  });
+}
+window.addEventListener('load', () => {
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    document.body.classList.add('mobile-view');
+    initMobileExperience();
+  }
+  
+  // Handle resize to switch between mobile and desktop views
+  window.addEventListener('resize', () => {
+    const wasMobile = document.body.classList.contains('mobile-view');
+    const isMobileNow = window.innerWidth <= 768;
+    
+    if (isMobileNow && !wasMobile) {
+      document.body.classList.add('mobile-view');
+      initMobileExperience();
+    } else if (!isMobileNow && wasMobile) {
+      document.body.classList.remove('mobile-view');
+      const mobileUI = document.getElementById('mobile-feed');
+      if (mobileUI) mobileUI.remove();
+      document.querySelector('.main-content').style.display = '';
+      document.querySelector('footer').style.display = '';
+    }
+  });
+});
 function filterDuplicateStreams(streams) {
   if (!Array.isArray(streams)) {
     console.error('Input is not an array');
